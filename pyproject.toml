@@ -10,3 +10,14 @@ dependencies = [
     "google-cloud-aiplatform>=1.40.0",
     "requests>=2.31",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# Tool tests run offline against the snapshot. The live USDA check runs only with: pytest -m live
+markers = ["live: calls the real USDA API (needs USDA_API_KEY and network)"]
+addopts = "-m 'not live'"
+pythonpath = ["."]

@@ -12,9 +12,11 @@ from tools import TOOLS, run_tool
 
 # --- Config ---
 
+# Temporary prompt for Phase 1 (lookup tool only). The full prompt comes in Phase 4.
 SYSTEM_PROMPT = (
-    "You are a helpful assistant. When a question depends on the weather or "
-    "outdoor conditions, call get_weather first, then answer in a sentence."
+    "You are a nutrition assistant for East Asian food. For questions about one food or "
+    "ingredient per 100g, call lookup_food_nutrition once per food, then answer briefly "
+    "using only the numbers the tool returned."
 )
 MAX_TOOL_ROUNDS = 5
 

@@ -1,0 +1,302 @@
+{
+  "_about": "Per-100g values for the pinned ingredients in data/foods.json, fetched from USDA FoodData Central on 2026-10-02 by scripts/build_snapshot.py. Fallback only; the tool calls USDA first.",
+  "foods": {
+    "cooked white rice": {
+      "fdc_id": 168878,
+      "description": "Rice, white, long-grain, regular, enriched, cooked",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 130,
+        "protein_g": 2.7,
+        "carbs_g": 28.2,
+        "fat_g": 0.3
+      }
+    },
+    "cooked wheat noodles": {
+      "fdc_id": 169737,
+      "description": "Pasta, cooked, enriched, without added salt",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 158,
+        "protein_g": 5.8,
+        "carbs_g": 30.9,
+        "fat_g": 0.9
+      }
+    },
+    "wheat flour": {
+      "fdc_id": 168894,
+      "description": "Wheat flour, white, all-purpose, enriched, bleached",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 364,
+        "protein_g": 10.3,
+        "carbs_g": 76.3,
+        "fat_g": 1.0
+      }
+    },
+    "cornstarch": {
+      "fdc_id": 169698,
+      "description": "Cornstarch",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 381,
+        "protein_g": 0.3,
+        "carbs_g": 91.3,
+        "fat_g": 0.1
+      }
+    },
+    "egg": {
+      "fdc_id": 171287,
+      "description": "Egg, whole, raw, fresh",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 143,
+        "protein_g": 12.6,
+        "carbs_g": 0.7,
+        "fat_g": 9.5
+      }
+    },
+    "firm tofu": {
+      "fdc_id": 172448,
+      "description": "Tofu, firm, prepared with calcium sulfate and magnesium chloride (nigari)",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 78,
+        "protein_g": 9.0,
+        "carbs_g": 2.9,
+        "fat_g": 4.2
+      }
+    },
+    "ground pork": {
+      "fdc_id": 167902,
+      "description": "Pork, fresh, ground, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 263,
+        "protein_g": 16.9,
+        "carbs_g": 0.0,
+        "fat_g": 21.2
+      }
+    },
+    "pork belly": {
+      "fdc_id": 2727576,
+      "description": "Pork, belly, with skin, raw",
+      "data_type": "Foundation",
+      "per_100g": {
+        "calories_kcal": 385,
+        "protein_g": 15.2,
+        "carbs_g": 0.0,
+        "fat_g": 35.8
+      }
+    },
+    "pork loin": {
+      "fdc_id": 168314,
+      "description": "Pork, fresh, loin, top loin (roasts), boneless, separable lean and fat, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 166,
+        "protein_g": 21.3,
+        "carbs_g": 0.0,
+        "fat_g": 8.3
+      }
+    },
+    "ground beef": {
+      "fdc_id": 174036,
+      "description": "Beef, ground, 80% lean meat / 20% fat, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 254,
+        "protein_g": 17.2,
+        "carbs_g": 0.0,
+        "fat_g": 20.0
+      }
+    },
+    "chicken wing with skin": {
+      "fdc_id": 172390,
+      "description": "Chicken, broilers or fryers, wing, meat and skin, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 191,
+        "protein_g": 17.5,
+        "carbs_g": 0.0,
+        "fat_g": 12.8
+      }
+    },
+    "tomato": {
+      "fdc_id": 170457,
+      "description": "Tomatoes, red, ripe, raw, year round average",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 18,
+        "protein_g": 0.9,
+        "carbs_g": 3.9,
+        "fat_g": 0.2
+      }
+    },
+    "bok choy": {
+      "fdc_id": 170390,
+      "description": "Cabbage, chinese (pak-choi), raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 13,
+        "protein_g": 1.5,
+        "carbs_g": 2.2,
+        "fat_g": 0.2
+      }
+    },
+    "green bell pepper": {
+      "fdc_id": 170427,
+      "description": "Peppers, sweet, green, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 20,
+        "protein_g": 0.9,
+        "carbs_g": 4.6,
+        "fat_g": 0.2
+      }
+    },
+    "scallion": {
+      "fdc_id": 170005,
+      "description": "Onions, spring or scallions (includes tops and bulb), raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 32,
+        "protein_g": 1.8,
+        "carbs_g": 7.3,
+        "fat_g": 0.2
+      }
+    },
+    "napa cabbage": {
+      "fdc_id": 169979,
+      "description": "Cabbage, chinese (pe-tsai), raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 16,
+        "protein_g": 1.2,
+        "carbs_g": 3.2,
+        "fat_g": 0.2
+      }
+    },
+    "spinach": {
+      "fdc_id": 168462,
+      "description": "Spinach, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 23,
+        "protein_g": 2.9,
+        "carbs_g": 3.6,
+        "fat_g": 0.4
+      }
+    },
+    "carrot": {
+      "fdc_id": 170393,
+      "description": "Carrots, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 41,
+        "protein_g": 0.9,
+        "carbs_g": 9.6,
+        "fat_g": 0.2
+      }
+    },
+    "bean sprouts": {
+      "fdc_id": 169957,
+      "description": "Mung beans, mature seeds, sprouted, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 30,
+        "protein_g": 3.0,
+        "carbs_g": 5.9,
+        "fat_g": 0.2
+      }
+    },
+    "zucchini": {
+      "fdc_id": 169291,
+      "description": "Squash, summer, zucchini, includes skin, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 17,
+        "protein_g": 1.2,
+        "carbs_g": 3.1,
+        "fat_g": 0.3
+      }
+    },
+    "kimchi": {
+      "fdc_id": 170392,
+      "description": "Cabbage, kimchi",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 15,
+        "protein_g": 1.1,
+        "carbs_g": 2.4,
+        "fat_g": 0.5
+      }
+    },
+    "sugar": {
+      "fdc_id": 169655,
+      "description": "Sugars, granulated",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 387,
+        "protein_g": 0.0,
+        "carbs_g": 100.0,
+        "fat_g": 0.0
+      }
+    },
+    "cooking oil": {
+      "fdc_id": 172370,
+      "description": "Oil, vegetable, soybean, refined",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 884,
+        "protein_g": 0.0,
+        "carbs_g": 0.0,
+        "fat_g": 100.0
+      }
+    },
+    "sesame oil": {
+      "fdc_id": 171016,
+      "description": "Oil, sesame, salad or cooking",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 884,
+        "protein_g": 0.0,
+        "carbs_g": 0.0,
+        "fat_g": 100.0
+      }
+    },
+    "soy sauce": {
+      "fdc_id": 174277,
+      "description": "Soy sauce made from soy and wheat (shoyu)",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 53,
+        "protein_g": 8.1,
+        "carbs_g": 4.9,
+        "fat_g": 0.6
+      }
+    },
+    "gochujang": {
+      "fdc_id": 2113732,
+      "description": "SUNCHANG GOCHUJANG RED PEPPER PASTE, MEDIUM HOT",
+      "data_type": "Branded",
+      "per_100g": {
+        "calories_kcal": 200,
+        "protein_g": 5.0,
+        "carbs_g": 45.0,
+        "fat_g": 0.0
+      }
+    },
+    "pork fat": {
+      "fdc_id": 171401,
+      "description": "Lard",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 902,
+        "protein_g": 0.0,
+        "carbs_g": 0.0,
+        "fat_g": 100.0
+      }
+    }
+  }
+}

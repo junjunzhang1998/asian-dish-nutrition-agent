@@ -1,0 +1,277 @@
+{
+  "_about": "Ingredients looked up by lookup_food_nutrition. The key is the canonical English name. 'aliases' are other names for the same thing (English variants, Chinese, Korean). 'fdc_id' is the USDA FoodData Central ID pinned for it, chosen by hand from the output of scripts/find_fdc_candidates.py, which searches USDA for 'usda_query'.",
+  "ingredients": {
+    "cooked white rice": {
+      "aliases": [
+        "white rice",
+        "rice",
+        "steamed rice",
+        "米饭",
+        "白米饭",
+        "白饭"
+      ],
+      "usda_query": "rice white long-grain regular enriched cooked",
+      "fdc_id": 168878
+    },
+    "cooked wheat noodles": {
+      "aliases": [
+        "wheat noodles",
+        "noodles",
+        "chinese noodles",
+        "面条",
+        "面"
+      ],
+      "usda_query": "pasta cooked enriched without added salt",
+      "fdc_id": 169737,
+      "note": "USDA has no plain Chinese wheat noodle; plain pasta (wheat, no egg) is the closest generic entry."
+    },
+    "wheat flour": {
+      "aliases": [
+        "flour",
+        "all-purpose flour",
+        "white flour",
+        "面粉"
+      ],
+      "usda_query": "wheat flour white all-purpose enriched bleached",
+      "fdc_id": 168894
+    },
+    "cornstarch": {
+      "aliases": [
+        "corn starch",
+        "starch",
+        "玉米淀粉",
+        "淀粉"
+      ],
+      "usda_query": "cornstarch",
+      "fdc_id": 169698
+    },
+    "egg": {
+      "aliases": [
+        "eggs",
+        "whole egg",
+        "chicken egg",
+        "鸡蛋",
+        "蛋"
+      ],
+      "usda_query": "egg whole raw fresh",
+      "fdc_id": 171287
+    },
+    "firm tofu": {
+      "aliases": [
+        "tofu",
+        "bean curd",
+        "豆腐",
+        "老豆腐",
+        "北豆腐"
+      ],
+      "usda_query": "tofu raw firm prepared with calcium sulfate",
+      "fdc_id": 172448,
+      "note": "Nigari firm tofu (78 kcal) chosen over the denser calcium-sulfate entry 172475 (144 kcal), to match typical store-bought firm tofu."
+    },
+    "ground pork": {
+      "aliases": [
+        "minced pork",
+        "pork mince",
+        "猪肉末",
+        "肉末",
+        "猪肉馅"
+      ],
+      "usda_query": "pork fresh ground raw",
+      "fdc_id": 167902
+    },
+    "pork belly": {
+      "aliases": [
+        "五花肉",
+        "삼겹살"
+      ],
+      "usda_query": "pork fresh belly raw",
+      "fdc_id": 2727576,
+      "note": "Foundation entry with skin, to match skin-on belly used in Chinese cooking. Has no nutrient 1008; energy comes from 2048 (Atwater specific)."
+    },
+    "pork loin": {
+      "aliases": [
+        "lean pork",
+        "pork tenderloin",
+        "猪里脊",
+        "里脊肉",
+        "瘦肉"
+      ],
+      "usda_query": "pork loin raw",
+      "fdc_id": 168314
+    },
+    "ground beef": {
+      "aliases": [
+        "minced beef",
+        "beef mince",
+        "牛肉末",
+        "牛肉馅"
+      ],
+      "usda_query": "beef ground 80% lean meat 20% fat raw",
+      "fdc_id": 174036
+    },
+    "chicken wing with skin": {
+      "aliases": [
+        "chicken wing",
+        "chicken wings",
+        "鸡翅",
+        "鸡翅膀"
+      ],
+      "usda_query": "chicken broilers or fryers wing meat and skin raw",
+      "fdc_id": 172390
+    },
+    "tomato": {
+      "aliases": [
+        "tomatoes",
+        "番茄",
+        "西红柿"
+      ],
+      "usda_query": "tomatoes red ripe raw year round average",
+      "fdc_id": 170457
+    },
+    "bok choy": {
+      "aliases": [
+        "pak choi",
+        "pak choy",
+        "小白菜",
+        "青江菜",
+        "上海青"
+      ],
+      "usda_query": "pak-choi raw",
+      "fdc_id": 170390
+    },
+    "green bell pepper": {
+      "aliases": [
+        "green pepper",
+        "bell pepper",
+        "青椒",
+        "柿子椒"
+      ],
+      "usda_query": "peppers sweet green raw",
+      "fdc_id": 170427
+    },
+    "scallion": {
+      "aliases": [
+        "scallions",
+        "green onion",
+        "green onions",
+        "spring onion",
+        "葱",
+        "小葱",
+        "葱花"
+      ],
+      "usda_query": "onions spring or scallions raw",
+      "fdc_id": 170005
+    },
+    "napa cabbage": {
+      "aliases": [
+        "chinese cabbage",
+        "大白菜"
+      ],
+      "usda_query": "cabbage chinese pe-tsai raw",
+      "fdc_id": 169979
+    },
+    "spinach": {
+      "aliases": [
+        "菠菜"
+      ],
+      "usda_query": "spinach raw",
+      "fdc_id": 168462
+    },
+    "carrot": {
+      "aliases": [
+        "carrots",
+        "胡萝卜"
+      ],
+      "usda_query": "carrots raw",
+      "fdc_id": 170393
+    },
+    "bean sprouts": {
+      "aliases": [
+        "mung bean sprouts",
+        "豆芽",
+        "绿豆芽"
+      ],
+      "usda_query": "mung beans mature seeds sprouted raw",
+      "fdc_id": 169957
+    },
+    "zucchini": {
+      "aliases": [
+        "courgette",
+        "西葫芦",
+        "애호박"
+      ],
+      "usda_query": "squash summer zucchini includes skin raw",
+      "fdc_id": 169291
+    },
+    "kimchi": {
+      "aliases": [
+        "泡菜",
+        "辣白菜",
+        "김치"
+      ],
+      "usda_query": "kimchi",
+      "fdc_id": 170392
+    },
+    "sugar": {
+      "aliases": [
+        "white sugar",
+        "granulated sugar",
+        "糖",
+        "白糖",
+        "白砂糖"
+      ],
+      "usda_query": "sugars granulated",
+      "fdc_id": 169655
+    },
+    "cooking oil": {
+      "aliases": [
+        "oil",
+        "vegetable oil",
+        "soybean oil",
+        "食用油",
+        "植物油",
+        "大豆油"
+      ],
+      "usda_query": "oil vegetable soybean refined",
+      "fdc_id": 172370
+    },
+    "sesame oil": {
+      "aliases": [
+        "香油",
+        "芝麻油",
+        "참기름"
+      ],
+      "usda_query": "oil sesame salad or cooking",
+      "fdc_id": 171016
+    },
+    "soy sauce": {
+      "aliases": [
+        "酱油",
+        "生抽",
+        "간장"
+      ],
+      "usda_query": "soy sauce made from soy and wheat shoyu",
+      "fdc_id": 174277
+    },
+    "gochujang": {
+      "aliases": [
+        "korean chili paste",
+        "korean red pepper paste",
+        "韩式辣酱",
+        "고추장"
+      ],
+      "usda_query": "gochujang",
+      "fdc_id": 2113732,
+      "note": "No generic USDA entry exists. Pinned a Branded product (SUNCHANG red pepper paste), found by a Branded search for 'gochujang hot pepper paste'."
+    },
+    "pork fat": {
+      "aliases": [
+        "lard",
+        "猪油",
+        "라드"
+      ],
+      "usda_query": "lard",
+      "fdc_id": 171401
+    }
+  }
+}
