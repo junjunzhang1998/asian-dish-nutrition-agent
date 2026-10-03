@@ -406,10 +406,20 @@ def estimate_dish_nutrition(
         lines = ingredient_lines(items, oil_level)
         confidence = "ingredient_estimate"
         assumptions = ["Calculated from the ingredient list given, not a built-in recipe."]
-        if grams_low is None:
-            grams_low = sum(item["grams_low"] for item in items)
-            grams_high = sum(item["grams_high"] for item in items)
-            assumptions.append("Portion weight is the sum of the listed ingredients.")
+
+        # The calories come from the ingredients, so the weight reported is their sum too.
+        total_low = sum(item["grams_low"] for item in items)
+        total_high = sum(item["grams_high"] for item in items)
+        if grams_low is not None:
+            passed_mid = (grams_low + grams_high) / 2
+            total_mid = (total_low + total_high) / 2
+            if total_mid > 0 and abs(passed_mid - total_mid) / total_mid > 0.25:
+                assumptions.append(
+                    f"The portion passed in ({grams_low:g}-{grams_high:g} g) differs from the ingredient total "
+                    f"({total_low:g}-{total_high:g} g) by more than 25%; the calories follow the ingredients."
+                )
+        grams_low, grams_high = total_low, total_high
+        assumptions.append("Portion weight is the sum of the listed ingredients.")
 
     # 2. A built-in recipe: scale it to the portion eaten.
     elif dish in DISH_ALIASES:
@@ -606,7 +616,9 @@ TOOLS = [
                         "description": (
                             "Use when the dish has no built-in recipe or the user described the "
                             "ingredients. One item per ingredient (never combine two ingredients in one "
-                            "item), with grams for the amount actually eaten, including cooking oil, e.g. "
+                            "item), with grams for the amount actually eaten. Always include cooking oil, "
+                            "breading or batter (e.g. 'wheat flour', 'cornstarch'), sauces, and sugar: they "
+                            "carry most of the hidden calories. Example: "
                             "[{'name': 'egg', 'grams_low': 50, 'grams_high': 100}, {'name': 'cooking oil', "
                             "'grams_low': 5, 'grams_high': 15}]. Prefer these names, which have exact USDA "
                             "data: " + ", ".join(FOODS) + ". Any other name is searched in USDA and may "

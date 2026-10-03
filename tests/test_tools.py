@@ -363,6 +363,19 @@ def test_close_match_is_listed_in_assumptions(offline, monkeypatch):
     assert "'sweet potato noodles' as USDA 'Noodles, sweet potato, cooked'" in result["note_for_user"]
 
 
+def test_ingredient_weight_is_the_sum_and_mismatch_is_noted(offline):
+    items = [{"name": "cooked white rice", "grams_low": 200, "grams_high": 300},
+             {"name": "chicken breast", "grams_low": 100, "grams_high": 150}]  # total 300-450 g
+
+    close = dish("chicken rice", grams_low=300, grams_high=400, ingredients=items)
+    assert (close["grams_low"], close["grams_high"]) == (300, 450)  # the sum, not what was passed
+    assert not any("differs from the ingredient total" in a for a in close["assumptions"])
+
+    far = dish("chicken rice", grams_low=150, grams_high=250, ingredients=items)  # mid 200 vs 375
+    assert (far["grams_low"], far["grams_high"]) == (300, 450)
+    assert any("differs from the ingredient total" in a for a in far["assumptions"])
+
+
 def test_template_result_has_no_note_for_user(offline):
     assert "note_for_user" not in dish("congee", grams_low=300, grams_high=300)
 
