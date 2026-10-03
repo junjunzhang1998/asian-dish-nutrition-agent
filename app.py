@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from tools import TOOLS, run_tool
+from tools import TOOLS, clean_tool_name, run_tool
 
 # --- Config ---
 
@@ -20,11 +20,9 @@ dishes get a lower-confidence estimate built from their ingredients.
 
 NUMBERS
 - Every calorie or macro number you state must come from a tool result. Never estimate one yourself.
-- You may add up numbers that tools returned across items: calorie lows, calorie highs, and \
-macros. You may not multiply, rescale, or invent numbers. To change a portion or an oil \
-level, call the tool again.
-- Calories are a range (low-high). Macros (protein_g, carbs_g, fat_g) are single values for \
-the typical portion: add them up as single numbers and never present them as a range.
+- For more than one item, you may add up calories only: the low, typical, and high values \
+across items. Never add up protein, carbs, or fat; show them per item. You may not multiply, \
+rescale, or invent numbers. To change a portion or an oil level, call the tool again.
 - Earlier tool results in this conversation still count, so a follow-up can build on them.
 
 NAMES
@@ -59,10 +57,11 @@ ANSWERS
 - Reply in the language of the user's latest message: English in, English out; Chinese in, \
 Chinese out. If they named a dish in another language, show that name next to the English \
 one, e.g. 麻婆豆腐 (mapo tofu), so they can see it was understood.
-- Lead with the calorie RANGE (low-high kcal). Then one sentence naming the biggest \
-uncertainty (portion size or cooking oil). Add macros only if asked or useful. Keep it short.
-- These are informational estimates, not medical or dietary advice. Say so if the user asks \
-for medical or diet guidance.
+- Lead with the calorie RANGE (low-high kcal). For more than one item, give the total, then \
+each item's calories with its own protein, carbs, and fat. Then one sentence naming the \
+biggest uncertainty (portion size or cooking oil). Keep it short.
+- Say that these are informational estimates, not medical advice, ONLY when the user asks \
+about diet, weight loss, or a health condition. Otherwise leave it out.
 - Politely decline requests that have nothing to do with food or nutrition.
 """
 MAX_TOOL_ROUNDS = 8
@@ -95,9 +94,10 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
 
         # The harness, not the model, runs each tool and appends the result
         for call in reply.tool_calls:
+            name = clean_tool_name(call.function.name)  # so /chat never shows a junk-prefixed name
             args = json.loads(call.function.arguments)
-            result = run_tool(call.function.name, args)
-            tool_calls += [{"name": call.function.name, "args": args, "result": result}]
+            result = run_tool(name, args)
+            tool_calls += [{"name": name, "args": args, "result": result}]
 
             messages += [{"role": "tool", "tool_call_id": call.id, "content": result}]
 
