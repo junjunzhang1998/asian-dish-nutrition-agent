@@ -91,7 +91,7 @@
     "braised meat": {
       "names": [],
       "units": {
-        "plate": {"grams_low": 200, "grams_typical": 280, "grams_high": 350, "source": "assumption - needs verification"},
+        "plate": {"grams_low": 100, "grams_typical": 130, "grams_high": 160, "source": "assumption - needs verification", "note": "A plate is one person's serving, about 4-5 pieces."},
         "piece": {"grams_low": 20, "grams_typical": 30, "grams_high": 40, "source": "assumption - needs verification"}
       }
     },

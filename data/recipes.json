@@ -66,7 +66,7 @@
         {"name": "scallion", "grams": 5}
       ],
       "oil": {"name": "cooking oil", "grams_low": 15, "grams_high": 35},
-      "assumptions": ["Doubanjiang (chili bean paste) is not in the ingredient list, so gochujang stands in for it."],
+      "assumptions": ["Chili bean paste (doubanjiang) approximated with gochujang; USDA has no entry for it."],
       "source": "assumption - needs verification"
     },
     "egg fried rice": {
@@ -91,15 +91,15 @@
       "source": "assumption - needs verification"
     },
     "braised pork belly": {
-      "reference_serving": {"grams": 280, "unit": "plate"},
+      "reference_serving": {"grams": 130, "unit": "plate"},
       "ingredients": [
-        {"name": "pork belly", "grams": 300},
-        {"name": "sugar", "grams": 15},
-        {"name": "soy sauce", "grams": 20},
-        {"name": "scallion", "grams": 5}
+        {"name": "pork belly", "grams": 139.3},
+        {"name": "sugar", "grams": 7.0},
+        {"name": "soy sauce", "grams": 9.3},
+        {"name": "scallion", "grams": 2.3}
       ],
-      "oil": {"name": "cooking oil", "grams_low": 5, "grams_high": 15},
-      "assumptions": ["Skin-on pork belly. All fat that renders into the sauce is counted as eaten."],
+      "oil": {"name": "cooking oil", "grams_low": 2.3, "grams_high": 7.0},
+      "assumptions": ["One person's plate, about 4-5 pieces.", "Skin-on pork belly. All fat that renders into the sauce is counted as eaten."],
       "source": "assumption - needs verification"
     },
     "congee": {

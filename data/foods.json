@@ -272,6 +272,125 @@
       ],
       "usda_query": "lard",
       "fdc_id": 171401
+    },
+    "beef": {
+      "aliases": [
+        "lean beef",
+        "beef steak",
+        "sliced beef",
+        "牛肉",
+        "소고기"
+      ],
+      "usda_query": "beef top sirloin steak separable lean only raw",
+      "fdc_id": 174055,
+      "note": "Picked from the top 5 results; the top result for the search was veal."
+    },
+    "chicken breast": {
+      "aliases": [
+        "skinless chicken breast",
+        "鸡胸肉",
+        "鸡胸"
+      ],
+      "usda_query": "chicken broilers or fryers breast meat only raw",
+      "fdc_id": 171077,
+      "note": "Overrides the script's suggestion (171052, meat from the whole chicken) with the breast entry."
+    },
+    "chicken thigh": {
+      "aliases": [
+        "boneless chicken thigh",
+        "鸡腿肉"
+      ],
+      "usda_query": "chicken broilers or fryers thigh meat only raw",
+      "fdc_id": 173627
+    },
+    "shrimp": {
+      "aliases": [
+        "prawns",
+        "prawn",
+        "虾",
+        "虾仁",
+        "새우"
+      ],
+      "usda_query": "crustaceans shrimp raw",
+      "fdc_id": 175179
+    },
+    "onion": {
+      "aliases": [
+        "onions",
+        "yellow onion",
+        "洋葱",
+        "양파"
+      ],
+      "usda_query": "onions raw",
+      "fdc_id": 170000
+    },
+    "garlic": {
+      "aliases": [
+        "garlic cloves",
+        "大蒜",
+        "蒜",
+        "蒜末",
+        "마늘"
+      ],
+      "usda_query": "garlic raw",
+      "fdc_id": 169230
+    },
+    "ginger": {
+      "aliases": [
+        "ginger root",
+        "fresh ginger",
+        "生姜",
+        "姜"
+      ],
+      "usda_query": "ginger root raw",
+      "fdc_id": 169231
+    },
+    "mushroom": {
+      "aliases": [
+        "mushrooms",
+        "button mushroom",
+        "蘑菇"
+      ],
+      "usda_query": "mushrooms white raw",
+      "fdc_id": 169251
+    },
+    "potato": {
+      "aliases": [
+        "potatoes",
+        "土豆",
+        "马铃薯"
+      ],
+      "usda_query": "potatoes flesh and skin raw",
+      "fdc_id": 170026
+    },
+    "eggplant": {
+      "aliases": [
+        "aubergine",
+        "eggplants",
+        "茄子",
+        "가지"
+      ],
+      "usda_query": "eggplant raw",
+      "fdc_id": 169228
+    },
+    "broccoli": {
+      "aliases": [
+        "西兰花",
+        "西蓝花"
+      ],
+      "usda_query": "broccoli raw",
+      "fdc_id": 170379
+    },
+    "peanuts": {
+      "aliases": [
+        "peanut",
+        "roasted peanuts",
+        "花生",
+        "花生米",
+        "땅콩"
+      ],
+      "usda_query": "peanuts all types dry-roasted without salt",
+      "fdc_id": 173806
     }
   },
   "dishes": {

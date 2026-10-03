@@ -1,4 +1,6 @@
-"""Print the top USDA candidates for each ingredient in data/foods.json, to pick FDC IDs to pin.
+"""Print the top USDA candidates for each ingredient in data/foods.json that has no FDC ID yet.
+
+To re-check an ingredient that is already pinned, set its fdc_id back to null.
 
 One-off helper, not used by the app. Needs USDA_API_KEY in the environment.
 Run from the repo root:  uv run python scripts/find_fdc_candidates.py
@@ -41,6 +43,8 @@ def main() -> None:
     foods = json.loads((ROOT / "data" / "foods.json").read_text(encoding="utf-8"))["ingredients"]
 
     for name, entry in foods.items():
+        if entry["fdc_id"] is not None:
+            continue  # already pinned
         print(f"\n{name}   (search: '{entry['usda_query']}')")
         try:
             candidates = search_foods(entry["usda_query"], page_size=TOP_N)
