@@ -547,7 +547,8 @@ TOOLS = [
                         "type": "number",
                         "description": (
                             "How many units were eaten, e.g. 3 for three pieces. Use 0.5 for 'half' "
-                            "or 半, and 1 for 'a' or 一. This is a count of units, never grams."
+                            "or 半, and 1 for 'a' or 一. This is a count of units, never grams. "
+                            "'A small bowl' is quantity 1 with size 'small'; use 0.5 only for 'half'."
                         ),
                     },
                     "unit": {
@@ -565,7 +566,9 @@ TOOLS = [
                         "enum": SIZES,
                         "description": (
                             "'small' (小), 'regular', or 'large' (大). Leave it out unless the user "
-                            "says the portion was small or large; the default is 'regular'."
+                            "says the portion was small or large; the default is 'regular'. Example: "
+                            "'a small bowl' -> quantity 1, size 'small' (the size already makes it "
+                            "smaller, so do not also lower the quantity)."
                         ),
                     },
                 },
