@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from tools import TOOLS, clean_tool_name, run_tool
+from tools import TOOL_MAP, TOOLS, clean_tool_name, run_tool
 
 # --- Config ---
 
@@ -50,10 +50,12 @@ was in the bowl, then pass that as the `ingredients` list.
 
 CONVERSATION
 - Ask at most ONE clarifying question per message. Otherwise go ahead and state your assumption.
-- Build on earlier answers. "Add a small bowl of rice to that": estimate only the rice, then \
-add it to the earlier total. "It was pretty oily": call estimate_dish_nutrition again for \
-that dish with the same portion and oil_level 'heavy' (or 'light' for "not oily"), then give \
-the new total.
+- A newly mentioned food is a new estimate: give it on its own, not added to anything earlier.
+- Add it to an earlier total ONLY when the user asks to, with words like "add", "also", \
+"plus", or "with that". Then estimate only the new food, add it to the most recent total, and \
+say so in the reply (e.g. "Added to your earlier 257–591 kcal: ...").
+- "It was pretty oily": call estimate_dish_nutrition again for that dish with the same \
+portion and oil_level 'heavy' (or 'light' for "not oily"), then give the new total.
 
 ANSWERS
 - Reply in the language of the user's latest message: English in, English out; Chinese in, \
@@ -105,10 +107,13 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
 
         # The harness, not the model, runs each tool and appends the result
         for call in reply.tool_calls:
-            name = clean_tool_name(call.function.name)  # so /chat never shows a junk-prefixed name
+            name = clean_tool_name(call.function.name)
             args = json.loads(call.function.arguments)
             result = run_tool(name, args)
-            tool_calls += [{"name": name, "args": args, "result": result}]
+            # A name that is still not a real tool is recorded as "unknown_tool" (the result
+            # holds the error), so /chat never shows a garbled name. No guessing what was meant.
+            recorded_name = name if name in TOOL_MAP else "unknown_tool"
+            tool_calls += [{"name": recorded_name, "args": args, "result": result}]
 
             messages += [{"role": "tool", "tool_call_id": call.id, "content": result}]
 
