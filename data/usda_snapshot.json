@@ -1,5 +1,5 @@
 {
-  "_about": "Per-100g values for the pinned ingredients in data/foods.json, fetched from USDA FoodData Central on 2026-10-02 by scripts/build_snapshot.py. Fallback only; the tool calls USDA first.",
+  "_about": "Per-100g values for the pinned ingredients in data/foods.json, fetched from USDA FoodData Central on 2026-10-03 by scripts/build_snapshot.py. Fallback only; the tool calls USDA first.",
   "foods": {
     "cooked white rice": {
       "fdc_id": 168878,
@@ -296,6 +296,138 @@
         "protein_g": 0.0,
         "carbs_g": 0.0,
         "fat_g": 100.0
+      }
+    },
+    "beef": {
+      "fdc_id": 174055,
+      "description": "Beef, top sirloin, steak, separable lean only, trimmed to 1/8\" fat, all grades, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 131,
+        "protein_g": 22.1,
+        "carbs_g": 0.0,
+        "fat_g": 4.1
+      }
+    },
+    "chicken breast": {
+      "fdc_id": 171077,
+      "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 120,
+        "protein_g": 22.5,
+        "carbs_g": 0.0,
+        "fat_g": 2.6
+      }
+    },
+    "chicken thigh": {
+      "fdc_id": 173627,
+      "description": "Chicken, broilers or fryers, dark meat, thigh, meat only, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 121,
+        "protein_g": 19.7,
+        "carbs_g": 0.0,
+        "fat_g": 4.1
+      }
+    },
+    "shrimp": {
+      "fdc_id": 175179,
+      "description": "Crustaceans, shrimp, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 85,
+        "protein_g": 20.1,
+        "carbs_g": 0.0,
+        "fat_g": 0.5
+      }
+    },
+    "onion": {
+      "fdc_id": 170000,
+      "description": "Onions, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 40,
+        "protein_g": 1.1,
+        "carbs_g": 9.3,
+        "fat_g": 0.1
+      }
+    },
+    "garlic": {
+      "fdc_id": 169230,
+      "description": "Garlic, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 149,
+        "protein_g": 6.4,
+        "carbs_g": 33.1,
+        "fat_g": 0.5
+      }
+    },
+    "ginger": {
+      "fdc_id": 169231,
+      "description": "Ginger root, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 80,
+        "protein_g": 1.8,
+        "carbs_g": 17.8,
+        "fat_g": 0.8
+      }
+    },
+    "mushroom": {
+      "fdc_id": 169251,
+      "description": "Mushrooms, white, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 22,
+        "protein_g": 3.1,
+        "carbs_g": 3.3,
+        "fat_g": 0.3
+      }
+    },
+    "potato": {
+      "fdc_id": 170026,
+      "description": "Potatoes, flesh and skin, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 77,
+        "protein_g": 2.0,
+        "carbs_g": 17.5,
+        "fat_g": 0.1
+      }
+    },
+    "eggplant": {
+      "fdc_id": 169228,
+      "description": "Eggplant, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 25,
+        "protein_g": 1.0,
+        "carbs_g": 5.9,
+        "fat_g": 0.2
+      }
+    },
+    "broccoli": {
+      "fdc_id": 170379,
+      "description": "Broccoli, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 34,
+        "protein_g": 2.8,
+        "carbs_g": 6.6,
+        "fat_g": 0.4
+      }
+    },
+    "peanuts": {
+      "fdc_id": 173806,
+      "description": "Peanuts, all types, dry-roasted, without salt",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 587,
+        "protein_g": 24.4,
+        "carbs_g": 21.3,
+        "fat_g": 49.7
       }
     }
   }

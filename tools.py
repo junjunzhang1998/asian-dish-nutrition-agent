@@ -600,6 +600,9 @@ TOOL_MAP = {
 
 def run_tool(name: str, args: dict) -> str:
     """Run one tool call. Models invent tool names and arguments; never let that crash the loop."""
+    # Gemini sometimes sends a name with junk in front, e.g. 'x:default_api:estimate_portion_size'.
+    # The real name is the part after the last colon.
+    name = name.split(":")[-1].strip()
     if name not in TOOL_MAP:
         return json.dumps({
             "error": f"Unknown tool '{name}'.",

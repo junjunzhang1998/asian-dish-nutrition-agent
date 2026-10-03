@@ -63,7 +63,9 @@
         {"name": "gochujang", "grams": 15},
         {"name": "cornstarch", "grams": 5},
         {"name": "soy sauce", "grams": 5},
-        {"name": "scallion", "grams": 5}
+        {"name": "scallion", "grams": 5},
+        {"name": "garlic", "grams": 5},
+        {"name": "ginger", "grams": 3}
       ],
       "oil": {"name": "cooking oil", "grams_low": 15, "grams_high": 35},
       "assumptions": ["Chili bean paste (doubanjiang) approximated with gochujang; USDA has no entry for it."],
@@ -84,7 +86,8 @@
     "stir-fried greens": {
       "reference_serving": {"grams": 220, "unit": "plate"},
       "ingredients": [
-        {"name": "bok choy", "grams": 260}
+        {"name": "bok choy", "grams": 260},
+        {"name": "garlic", "grams": 8}
       ],
       "oil": {"name": "cooking oil", "grams_low": 8, "grams_high": 20},
       "assumptions": ["The greens were modeled as bok choy; leafy greens differ by only a few calories per 100 g, so the oil drives the estimate."],
@@ -117,7 +120,9 @@
         {"name": "pork loin", "grams": 120},
         {"name": "green bell pepper", "grams": 180},
         {"name": "cornstarch", "grams": 5},
-        {"name": "soy sauce", "grams": 10}
+        {"name": "soy sauce", "grams": 10},
+        {"name": "garlic", "grams": 5},
+        {"name": "ginger", "grams": 3}
       ],
       "oil": {"name": "cooking oil", "grams_low": 12, "grams_high": 30},
       "assumptions": [],

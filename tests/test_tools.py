@@ -132,6 +132,13 @@ def test_run_tool_unknown_name_returns_error_with_hint():
     assert result["error"] and result["hint"]
 
 
+def test_run_tool_ignores_junk_before_the_tool_name():
+    # Names Gemini actually sent during Phase 4 testing.
+    for name in [" ROUILLER:default_api:estimate_portion_size", "لمات:estimate_portion_size"]:
+        result = json.loads(tools.run_tool(name, {"food_name": "congee", "quantity": 1, "unit": "bowl"}))
+        assert result["food_name"] == "congee"
+
+
 def test_run_tool_bad_arguments_returns_error_with_hint():
     result = json.loads(tools.run_tool("lookup_food_nutrition", {"food": "tofu"}))
     assert result["error"] and result["hint"]
