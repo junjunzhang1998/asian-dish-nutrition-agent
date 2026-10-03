@@ -95,6 +95,12 @@
         "piece": {"grams_low": 20, "grams_typical": 30, "grams_high": 40, "source": "assumption - needs verification"}
       }
     },
+    "sushi piece": {
+      "names": ["sushi", "nigiri", "maki", "sushi roll", "california roll", "寿司", "握り寿司"],
+      "units": {
+        "piece": {"grams_low": 25, "grams_typical": 35, "grams_high": 45, "source": "assumption - needs verification", "note": "A piece is one nigiri or one cut roll piece."}
+      }
+    },
     "generic piece": {
       "names": [],
       "units": {

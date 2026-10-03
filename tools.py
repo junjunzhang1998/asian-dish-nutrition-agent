@@ -1,6 +1,7 @@
 """The tools the harness can run, and the JSON that describes them to the model."""
 
 import json
+import re
 from pathlib import Path
 
 from usda import USDAError, fetch_food, search_foods
@@ -28,6 +29,28 @@ def normalize_food_name(food_name: str) -> str:
     return ALIASES.get(name, name)
 
 
+def search_best_match(name: str) -> dict | None:
+    """Search USDA for an unpinned food and pick the best usable result, or None.
+
+    SR Legacy and Foundation are plain ingredients, so they are searched first. Survey (FNDDS)
+    also contains mixed dishes ('Lomi salmon'), so it is used only if the first search finds
+    nothing. Each result gets a point if its description starts with the name and a point if it
+    says "raw"; the most points wins, and ties keep USDA's order.
+    """
+
+    def points(food: dict) -> int:
+        description = food["description"].lower()
+        starts_with_name = description.startswith(name)
+        says_raw = "raw" in re.findall(r"[a-z]+", description)  # whole word, so not "strawberry"
+        return starts_with_name + says_raw  # True counts as 1
+
+    for data_types in (["SR Legacy", "Foundation"], ["Survey (FNDDS)"]):
+        matches = [f for f in search_foods(name, data_types=data_types, page_size=10) if f["per_100g"] is not None]
+        if matches:
+            return max(matches, key=points)  # max() returns the first of equally good results
+    return None
+
+
 def get_food_nutrition(food_name: str) -> dict:
     """Per-100g nutrition for one food, as a dict. Raises USDAError if it cannot be found.
 
@@ -44,14 +67,13 @@ def get_food_nutrition(food_name: str) -> dict:
             food = fetch_food(FOODS[name]["fdc_id"])
             match_quality = "exact"
         else:
-            matches = [f for f in search_foods(name) if f["per_100g"] is not None]
-            if not matches:
+            food = search_best_match(name)
+            if food is None:
                 raise USDAError(
                     f"No USDA match for '{food_name}'.",
                     "Try a more generic English name for a single ingredient, e.g. 'pork, ground' "
                     "instead of a brand or dish name. For a composed dish, use estimate_dish_nutrition.",
                 )
-            food = matches[0]  # USDA ranks the best match first
             match_quality = "close"
     except USDAError as e:
         if not (e.unavailable and name in SNAPSHOT):
@@ -319,13 +341,13 @@ def ingredient_lines(items: list, oil_level: str) -> list:
     return lines
 
 
-def add_up(lines: list) -> tuple[dict, list, list]:
+def add_up(lines: list) -> tuple[dict, list, list, list]:
     """Look up every line per 100 g and add up calories and macros.
 
-    Returns (totals, assumptions about the matches, sources). Raises USDAError.
+    Returns (totals, assumptions about the matches, sources, close matches). Raises USDAError.
     """
     totals = {"low": 0.0, "typical": 0.0, "high": 0.0, "oil_spread": 0.0, "protein_g": 0.0, "carbs_g": 0.0, "fat_g": 0.0}
-    assumptions, sources = [], []
+    assumptions, sources, close_matches = [], [], []
 
     for line in lines:
         try:
@@ -343,12 +365,13 @@ def add_up(lines: list) -> tuple[dict, list, list]:
 
         if food["match_quality"] == "close":
             assumptions.append(f"'{line['name']}' was matched to USDA '{food['matched_description']}' (close match).")
+            close_matches.append(f"'{line['name']}' as USDA '{food['matched_description']}'")
         elif food["match_quality"] == "branded":
             assumptions.append(f"'{line['name']}' uses a branded product label: '{food['matched_description']}'.")
         if food["source"] not in sources:
             sources.append(food["source"])
 
-    return totals, assumptions, sources
+    return totals, assumptions, sources, close_matches
 
 
 def estimate_dish_nutrition(
@@ -400,7 +423,20 @@ def estimate_dish_nutrition(
         lines, assumptions = template_lines(RECIPES[dish], grams_low, grams_high, oil_level)
         confidence = "template"
 
-    # 3. Neither: ask the model for an ingredient list.
+    # 3. The "dish" is one pinned ingredient ('a bowl of rice'): treat it as a one-item list.
+    elif normalize_food_name(dish) in FOODS:
+        if grams_low is None:
+            return error_json(
+                f"No portion weight given for '{dish_name}'.",
+                "Call estimate_portion_size first and pass its grams_low and grams_high, "
+                "or pass the user's exact weight as both.",
+            )
+        dish = normalize_food_name(dish)
+        lines = ingredient_lines([{"name": dish, "grams_low": grams_low, "grams_high": grams_high}], oil_level)
+        confidence = "ingredient_estimate"
+        assumptions = [f"A single ingredient: USDA values for {dish}, applied to the {grams_low:g}-{grams_high:g} g eaten."]
+
+    # 4. None of these: ask the model for an ingredient list.
     else:
         return error_json(
             f"No built-in recipe for '{dish_name}'.",
@@ -409,7 +445,7 @@ def estimate_dish_nutrition(
         )
 
     try:
-        totals, match_notes, sources = add_up(lines)
+        totals, match_notes, sources, close_matches = add_up(lines)
     except USDAError as e:
         return json.dumps(e.to_dict(), ensure_ascii=False)
 
@@ -418,7 +454,7 @@ def estimate_dish_nutrition(
     portion_part = (totals["high"] - totals["low"]) - oil_part
     biggest_uncertainty = "cooking_oil" if oil_part > portion_part else "portion_size"
 
-    return json.dumps({
+    result = {
         "dish_name": dish,
         "grams_low": round(grams_low),
         "grams_high": round(grams_high),
@@ -430,7 +466,17 @@ def estimate_dish_nutrition(
         "confidence": confidence,
         "assumptions": assumptions + match_notes,
         "sources": sources,
-    }, ensure_ascii=False)
+    }
+
+    # An estimate from an ingredient list (not a recipe, not a single pinned food) gets a sentence
+    # the model must pass on, so the user knows how much to trust it.
+    if ingredients:
+        note = "This is a lower-confidence estimate, calculated from an ingredient list rather than a built-in recipe."
+        if close_matches:
+            note += " These ingredients had no exact USDA entry and were matched loosely: " + "; ".join(close_matches) + "."
+        result["note_for_user"] = note
+
+    return json.dumps(result, ensure_ascii=False)
 
 
 # What the model sees: the "set notes" in the screenplay.
@@ -526,8 +572,10 @@ TOOLS = [
                 "by calculating from its ingredients. Returns a low-to-high calorie range and says "
                 "whether portion size or cooking oil drives the uncertainty. Has built-in recipes for "
                 "common dishes: " + ", ".join(RECIPES) + ". For a built-in dish, pass grams_low and "
-                "grams_high (from estimate_portion_size, or the user's exact weight). For any other "
-                "dish, or when the user tells you what went into it, pass an `ingredients` list. "
+                "grams_high (from estimate_portion_size, or the user's exact weight). A plain single "
+                "food ('rice', 'egg') works the same way: pass it as dish_name with its grams. For any "
+                "other dish, or when the user tells you what went into it, pass an `ingredients` list. "
+                "If the result has `note_for_user`, include that sentence in your reply. "
                 "Use this for dishes and portions; use lookup_food_nutrition only for per-100g "
                 "questions about a single ingredient."
             ),

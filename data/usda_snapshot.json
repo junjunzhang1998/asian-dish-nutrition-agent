@@ -429,6 +429,28 @@
         "carbs_g": 21.3,
         "fat_g": 49.7
       }
+    },
+    "salmon": {
+      "fdc_id": 175167,
+      "description": "Fish, salmon, Atlantic, farmed, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 208,
+        "protein_g": 20.4,
+        "carbs_g": 0.0,
+        "fat_g": 13.4
+      }
+    },
+    "tuna": {
+      "fdc_id": 175159,
+      "description": "Fish, tuna, fresh, yellowfin, raw",
+      "data_type": "SR Legacy",
+      "per_100g": {
+        "calories_kcal": 109,
+        "protein_g": 24.4,
+        "carbs_g": 0.0,
+        "fat_g": 0.5
+      }
     }
   }
 }

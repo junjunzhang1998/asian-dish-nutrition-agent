@@ -81,7 +81,7 @@ def test_branded_entry_is_labelled(monkeypatch):
 
 
 def test_lookup_nonsense_name_returns_error_with_hint(monkeypatch):
-    monkeypatch.setattr(tools, "search_foods", lambda query: [])  # USDA found nothing
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [])  # USDA found nothing
 
     result = json.loads(tools.lookup_food_nutrition("xyzzy blorp"))
 
@@ -351,12 +351,91 @@ def test_ramen_counts_half_the_broth(offline, monkeypatch):
 def test_close_match_is_listed_in_assumptions(offline, monkeypatch):
     fake = {"fdc_id": 1, "description": "Noodles, sweet potato, cooked", "data_type": "SR Legacy",
             "per_100g": {"calories_kcal": 100, "protein_g": 0.1, "carbs_g": 25.0, "fat_g": 0.0}}
-    monkeypatch.setattr(tools, "search_foods", lambda query: [fake])
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [fake])
 
     result = dish("japchae", ingredients=[{"name": "sweet potato noodles", "grams_low": 100, "grams_high": 150}])
 
     assert "'sweet potato noodles' was matched to USDA 'Noodles, sweet potato, cooked' (close match)." in result["assumptions"]
     assert result["grams_low"] == 100  # no portion given: the sum of the ingredients
+
+    # The sentence for the model to relay says it is lower confidence and names the loose match.
+    assert "lower-confidence" in result["note_for_user"]
+    assert "'sweet potato noodles' as USDA 'Noodles, sweet potato, cooked'" in result["note_for_user"]
+
+
+def test_template_result_has_no_note_for_user(offline):
+    assert "note_for_user" not in dish("congee", grams_low=300, grams_high=300)
+
+
+def test_single_pinned_food_needs_no_ingredient_list(offline):
+    result = dish("rice", grams_low=150, grams_high=250)  # 'rice' is an alias of cooked white rice
+    assert result["dish_name"] == "cooked white rice"
+    rice = tools.SNAPSHOT["cooked white rice"]["per_100g"]["calories_kcal"]
+    assert result["calories"]["low"] == round(150 * rice / 100)
+    assert result["calories"]["high"] == round(250 * rice / 100)
+    assert "note_for_user" not in result  # USDA data for one food, not a guessed recipe
+
+
+def test_single_pinned_food_without_grams_returns_error(offline):
+    result = dish("rice")
+    assert result["error"] and "estimate_portion_size" in result["hint"]
+
+
+# --- Search for unpinned foods ---
+
+
+def fake_food(fdc_id, description):
+    return {"fdc_id": fdc_id, "description": description, "data_type": "SR Legacy",
+            "per_100g": {"calories_kcal": 100, "protein_g": 1.0, "carbs_g": 1.0, "fat_g": 1.0}}
+
+
+def test_search_prefers_raw_and_names_starting_with_the_query(monkeypatch):
+    results = [fake_food(1, "Fish oil, salmon"), fake_food(2, "Fish, salmon, chinook, raw")]
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: results)
+    assert tools.search_best_match("salmon")["fdc_id"] == 2  # says "raw"
+
+    results = [fake_food(1, "Fish, squid, raw"), fake_food(2, "Squid, dried"), fake_food(3, "Squid, raw")]
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: results)
+    assert tools.search_best_match("squid")["fdc_id"] == 3  # starts with "squid" AND says "raw"
+
+    # One point each: a tie, so USDA's order decides (the real squid results from USDA).
+    results = [fake_food(1, "Mollusks, squid, mixed species, raw"), fake_food(2, "Squid (calamari), frozen, tubes only")]
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: results)
+    assert tools.search_best_match("squid")["fdc_id"] == 1
+
+    results = [fake_food(1, "Strawberry jam"), fake_food(2, "Strawberries, frozen")]
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: results)
+    assert tools.search_best_match("jam")["fdc_id"] == 1  # "strawberry" does not count as "raw"
+
+
+def test_search_uses_fndds_only_when_sr_and_foundation_find_nothing(monkeypatch):
+    calls = []
+    sr_and_foundation_results = []
+
+    def fake_search(query, data_types, page_size):
+        calls.append(data_types)
+        if data_types == ["Survey (FNDDS)"]:
+            return [fake_food(9, "Lomi salmon")]
+        return sr_and_foundation_results
+
+    monkeypatch.setattr(tools, "search_foods", fake_search)
+
+    # SR Legacy and Foundation find nothing: FNDDS is searched next.
+    assert tools.search_best_match("lomi salmon")["fdc_id"] == 9
+    assert calls == [["SR Legacy", "Foundation"], ["Survey (FNDDS)"]]
+
+    # SR Legacy and Foundation find something: FNDDS is never searched.
+    calls.clear()
+    sr_and_foundation_results.append(fake_food(1, "Fish, salmon, raw"))
+    assert tools.search_best_match("salmon")["fdc_id"] == 1
+    assert calls == [["SR Legacy", "Foundation"]]
+
+
+def test_sushi_piece_rule():
+    result = portion("salmon nigiri", 6, "piece")
+    rule = rule_for("sushi piece", "piece")
+    assert result["grams_low"] == 6 * rule["grams_low"]
+    assert result["grams_high"] == 6 * rule["grams_high"]
 
 
 def test_branded_ingredient_is_listed_in_assumptions(offline):
@@ -365,7 +444,7 @@ def test_branded_ingredient_is_listed_in_assumptions(offline):
 
 
 def test_unknown_ingredient_returns_error_with_hint(offline, monkeypatch):
-    monkeypatch.setattr(tools, "search_foods", lambda query: [])
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [])
     result = dish("mapo tofu", ingredients=[{"name": "doubanjiang", "grams_low": 10, "grams_high": 20}])
     assert result["error"] == "Could not find nutrition data for ingredient 'doubanjiang'."
     assert "closer generic ingredient" in result["hint"]
@@ -401,6 +480,7 @@ def test_live_usda_lookup():
     assert pinned["fdc_id"] == 172448
     assert pinned["per_100g"] == tools.SNAPSHOT["firm tofu"]["per_100g"]
 
-    searched = json.loads(tools.lookup_food_nutrition("broccoli"))  # not pinned
+    searched = json.loads(tools.lookup_food_nutrition("squid"))  # not pinned
     assert searched["match_quality"] == "close"
     assert set(searched) == RESULT_KEYS
+    assert searched["matched_description"] == "Mollusks, squid, mixed species, raw"  # SR Legacy, raw

@@ -391,6 +391,31 @@
       ],
       "usda_query": "peanuts all types dry-roasted without salt",
       "fdc_id": 173806
+    },
+    "salmon": {
+      "aliases": [
+        "raw salmon",
+        "salmon fillet",
+        "三文鱼",
+        "鲑鱼",
+        "연어",
+        "サーモン"
+      ],
+      "usda_query": "fish salmon atlantic farmed raw",
+      "fdc_id": 175167
+    },
+    "tuna": {
+      "aliases": [
+        "raw tuna",
+        "ahi",
+        "maguro",
+        "金枪鱼",
+        "吞拿鱼",
+        "참치",
+        "マグロ"
+      ],
+      "usda_query": "fish tuna fresh yellowfin raw",
+      "fdc_id": 175159
     }
   },
   "dishes": {
