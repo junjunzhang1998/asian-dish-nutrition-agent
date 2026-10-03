@@ -1,0 +1,187 @@
+{
+  "_about": "Recipe templates used by estimate_dish_nutrition. The key is the canonical dish name from the 'dishes' section of foods.json. 'reference_serving' is one serving as served (cooked weight, matching the typical weight in portion_rules.json). 'ingredients' are RAW grams for that one serving, using only ingredients pinned in foods.json; water is left out because it has no calories, so they do not add up to the serving weight. 'oil' is the cooking oil (or other added fat) for one serving as a low-high range. Lines marked 'in_broth' are part of the soup, and only 'broth_eaten_fraction' of them is counted. No calorie totals are stored here: the tool always calculates them from the ingredients. Any number that is my own estimate has source 'assumption - needs verification'.",
+  "recipes": {
+    "tomato scrambled eggs": {
+      "reference_serving": {"grams": 300, "unit": "plate"},
+      "ingredients": [
+        {"name": "tomato", "grams": 200},
+        {"name": "egg", "grams": 125},
+        {"name": "sugar", "grams": 5},
+        {"name": "scallion", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 10, "grams_high": 25},
+      "assumptions": ["About 2-3 eggs per plate."],
+      "source": "assumption - needs verification"
+    },
+    "dumplings": {
+      "reference_serving": {"grams": 240, "unit": "10 dumplings"},
+      "ingredients": [
+        {"name": "wheat flour", "grams": 65},
+        {"name": "ground pork", "grams": 90},
+        {"name": "napa cabbage", "grams": 40},
+        {"name": "scallion", "grams": 5},
+        {"name": "soy sauce", "grams": 5},
+        {"name": "sesame oil", "grams": 3}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 0, "grams_high": 12},
+      "assumptions": ["Pork and napa cabbage filling.", "Oil: none if boiled, up to 12 g per 10 if pan-fried as potstickers."],
+      "source": "assumption - needs verification"
+    },
+    "bao": {
+      "reference_serving": {"grams": 100, "unit": "bao"},
+      "ingredients": [
+        {"name": "wheat flour", "grams": 40},
+        {"name": "sugar", "grams": 2},
+        {"name": "ground pork", "grams": 28},
+        {"name": "scallion", "grams": 3},
+        {"name": "soy sauce", "grams": 3},
+        {"name": "sesame oil", "grams": 1}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 1, "grams_high": 4},
+      "assumptions": ["Pork filling. Oil is the fat worked into the dough and filling."],
+      "source": "assumption - needs verification"
+    },
+    "xiaolongbao": {
+      "reference_serving": {"grams": 200, "unit": "steamer of 8"},
+      "ingredients": [
+        {"name": "wheat flour", "grams": 48},
+        {"name": "ground pork", "grams": 90},
+        {"name": "scallion", "grams": 4},
+        {"name": "soy sauce", "grams": 6},
+        {"name": "sugar", "grams": 3},
+        {"name": "sesame oil", "grams": 2}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 0, "grams_high": 4},
+      "assumptions": ["8 pieces at about 25 g each.", "The soup inside is pork aspic, counted as water."],
+      "source": "assumption - needs verification"
+    },
+    "mapo tofu": {
+      "reference_serving": {"grams": 300, "unit": "plate"},
+      "ingredients": [
+        {"name": "firm tofu", "grams": 220},
+        {"name": "ground beef", "grams": 40},
+        {"name": "gochujang", "grams": 15},
+        {"name": "cornstarch", "grams": 5},
+        {"name": "soy sauce", "grams": 5},
+        {"name": "scallion", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 15, "grams_high": 35},
+      "assumptions": ["Doubanjiang (chili bean paste) is not in the ingredient list, so gochujang stands in for it."],
+      "source": "assumption - needs verification"
+    },
+    "egg fried rice": {
+      "reference_serving": {"grams": 400, "unit": "plate"},
+      "ingredients": [
+        {"name": "cooked white rice", "grams": 320},
+        {"name": "egg", "grams": 60},
+        {"name": "scallion", "grams": 10},
+        {"name": "soy sauce", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 10, "grams_high": 25},
+      "assumptions": [],
+      "source": "assumption - needs verification"
+    },
+    "stir-fried greens": {
+      "reference_serving": {"grams": 220, "unit": "plate"},
+      "ingredients": [
+        {"name": "bok choy", "grams": 260}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 8, "grams_high": 20},
+      "assumptions": ["The greens were modeled as bok choy; leafy greens differ by only a few calories per 100 g, so the oil drives the estimate."],
+      "source": "assumption - needs verification"
+    },
+    "braised pork belly": {
+      "reference_serving": {"grams": 280, "unit": "plate"},
+      "ingredients": [
+        {"name": "pork belly", "grams": 300},
+        {"name": "sugar", "grams": 15},
+        {"name": "soy sauce", "grams": 20},
+        {"name": "scallion", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 5, "grams_high": 15},
+      "assumptions": ["Skin-on pork belly. All fat that renders into the sauce is counted as eaten."],
+      "source": "assumption - needs verification"
+    },
+    "congee": {
+      "reference_serving": {"grams": 300, "unit": "bowl"},
+      "ingredients": [
+        {"name": "cooked white rice", "grams": 80}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 0, "grams_high": 0},
+      "assumptions": ["Plain congee, no toppings: modeled as 80 g of cooked white rice per bowl, with the rest water."],
+      "source": "assumption - needs verification"
+    },
+    "shredded pork with green pepper": {
+      "reference_serving": {"grams": 300, "unit": "plate"},
+      "ingredients": [
+        {"name": "pork loin", "grams": 120},
+        {"name": "green bell pepper", "grams": 180},
+        {"name": "cornstarch", "grams": 5},
+        {"name": "soy sauce", "grams": 10}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 12, "grams_high": 30},
+      "assumptions": [],
+      "source": "assumption - needs verification"
+    },
+    "ramen": {
+      "reference_serving": {"grams": 750, "unit": "bowl"},
+      "ingredients": [
+        {"name": "cooked wheat noodles", "grams": 230},
+        {"name": "pork belly", "grams": 60},
+        {"name": "egg", "grams": 50},
+        {"name": "bean sprouts", "grams": 20},
+        {"name": "scallion", "grams": 10},
+        {"name": "soy sauce", "grams": 30, "in_broth": true}
+      ],
+      "oil": {"name": "pork fat", "grams_low": 10, "grams_high": 30, "in_broth": true},
+      "broth_eaten_fraction": 0.5,
+      "assumptions": ["The reference bowl (750 g) includes all of the broth.", "Broth fat is modeled as pork fat (lard), and the soy sauce tare is part of the broth.", "About half of the broth is drunk, so half of the broth's fat and soy sauce is counted."],
+      "source": "assumption - needs verification"
+    },
+    "bibimbap": {
+      "reference_serving": {"grams": 500, "unit": "bowl"},
+      "ingredients": [
+        {"name": "cooked white rice", "grams": 220},
+        {"name": "ground beef", "grams": 50},
+        {"name": "egg", "grams": 50},
+        {"name": "spinach", "grams": 40},
+        {"name": "bean sprouts", "grams": 40},
+        {"name": "carrot", "grams": 30},
+        {"name": "zucchini", "grams": 30},
+        {"name": "gochujang", "grams": 20},
+        {"name": "sesame oil", "grams": 5},
+        {"name": "soy sauce", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 8, "grams_high": 20},
+      "assumptions": ["Beef, one fried egg, and four vegetable toppings. Oil is for sauteing the toppings and frying the egg."],
+      "source": "assumption - needs verification"
+    },
+    "kimchi jjigae": {
+      "reference_serving": {"grams": 400, "unit": "bowl"},
+      "ingredients": [
+        {"name": "kimchi", "grams": 150},
+        {"name": "pork belly", "grams": 60},
+        {"name": "firm tofu", "grams": 80},
+        {"name": "gochujang", "grams": 10},
+        {"name": "scallion", "grams": 10}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 3, "grams_high": 10},
+      "assumptions": ["The whole stew is eaten, broth included."],
+      "source": "assumption - needs verification"
+    },
+    "korean fried chicken": {
+      "reference_serving": {"grams": 350, "unit": "plate"},
+      "ingredients": [
+        {"name": "chicken wing with skin", "grams": 380},
+        {"name": "wheat flour", "grams": 20},
+        {"name": "cornstarch", "grams": 25},
+        {"name": "gochujang", "grams": 15},
+        {"name": "sugar", "grams": 10},
+        {"name": "soy sauce", "grams": 8}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 15, "grams_high": 40},
+      "assumptions": ["Weights are the edible part, without bone.", "Double-fried with a flour and starch coating and a light sweet-spicy glaze.", "Oil is the frying oil absorbed by the chicken."],
+      "source": "assumption - needs verification"
+    }
+  }
+}

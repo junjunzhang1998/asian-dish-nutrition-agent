@@ -1,5 +1,5 @@
 {
-  "_about": "Ingredients looked up by lookup_food_nutrition. The key is the canonical English name. 'aliases' are other names for the same thing (English variants, Chinese, Korean). 'fdc_id' is the USDA FoodData Central ID pinned for it, chosen by hand from the output of scripts/find_fdc_candidates.py, which searches USDA for 'usda_query'.",
+  "_about": "Names the tools understand. 'ingredients': the key is the canonical English ingredient name, 'aliases' are other names for it (English variants, Chinese, Korean), and 'fdc_id' is the USDA FoodData Central ID pinned for it, chosen by hand from the output of scripts/find_fdc_candidates.py, which searches USDA for 'usda_query'. 'dishes': the key is the canonical English dish name (the same key as in recipes.json), 'aliases' are other names for it, and 'portion_category' is its category in portion_rules.json. Dish aliases live only here; both estimate_portion_size and estimate_dish_nutrition read them.",
   "ingredients": {
     "cooked white rice": {
       "aliases": [
@@ -272,6 +272,177 @@
       ],
       "usda_query": "lard",
       "fdc_id": 171401
+    }
+  },
+  "dishes": {
+    "tomato scrambled eggs": {
+      "aliases": [
+        "tomato egg",
+        "tomato eggs",
+        "tomato and egg",
+        "tomato and eggs",
+        "scrambled eggs with tomato",
+        "tomato egg stir-fry",
+        "番茄炒蛋",
+        "西红柿炒鸡蛋",
+        "西红柿炒蛋"
+      ],
+      "portion_category": "stir-fry dish"
+    },
+    "dumplings": {
+      "aliases": [
+        "dumpling",
+        "pork dumplings",
+        "pork dumpling",
+        "potstickers",
+        "potsticker",
+        "jiaozi",
+        "gyoza",
+        "mandu",
+        "饺子",
+        "水饺",
+        "锅贴",
+        "煎饺",
+        "猪肉饺子"
+      ],
+      "portion_category": "dumpling"
+    },
+    "bao": {
+      "aliases": [
+        "baozi",
+        "pork bao",
+        "pork bun",
+        "pork buns",
+        "steamed pork bun",
+        "steamed pork buns",
+        "包子",
+        "肉包",
+        "肉包子"
+      ],
+      "portion_category": "bao"
+    },
+    "xiaolongbao": {
+      "aliases": [
+        "xiao long bao",
+        "soup dumplings",
+        "soup dumpling",
+        "小笼包",
+        "小笼汤包"
+      ],
+      "portion_category": "xiaolongbao"
+    },
+    "mapo tofu": {
+      "aliases": [
+        "mapo doufu",
+        "ma po tofu",
+        "麻婆豆腐"
+      ],
+      "portion_category": "stir-fry dish"
+    },
+    "egg fried rice": {
+      "aliases": [
+        "fried rice",
+        "炒饭",
+        "蛋炒饭"
+      ],
+      "portion_category": "fried rice"
+    },
+    "stir-fried greens": {
+      "aliases": [
+        "greens",
+        "stir-fried bok choy",
+        "bok choy",
+        "pak choi",
+        "choy sum",
+        "gai lan",
+        "chinese broccoli",
+        "water spinach",
+        "spinach",
+        "pea shoots",
+        "a-choy",
+        "napa cabbage",
+        "炒青菜",
+        "青菜",
+        "白菜",
+        "小白菜",
+        "菜心",
+        "芥兰",
+        "空心菜",
+        "菠菜",
+        "豆苗",
+        "油麦菜"
+      ],
+      "portion_category": "vegetable dish"
+    },
+    "braised pork belly": {
+      "aliases": [
+        "braised pork",
+        "red-braised pork",
+        "red braised pork belly",
+        "hong shao rou",
+        "红烧肉"
+      ],
+      "portion_category": "braised meat"
+    },
+    "congee": {
+      "aliases": [
+        "rice porridge",
+        "plain congee",
+        "jook",
+        "juk",
+        "粥",
+        "白粥",
+        "稀饭"
+      ],
+      "portion_category": "congee"
+    },
+    "shredded pork with green pepper": {
+      "aliases": [
+        "green pepper pork",
+        "pork with green pepper",
+        "shredded pork with green peppers",
+        "qingjiao rousi",
+        "青椒肉丝"
+      ],
+      "portion_category": "stir-fry dish"
+    },
+    "ramen": {
+      "aliases": [
+        "japanese ramen",
+        "tonkotsu ramen",
+        "shoyu ramen",
+        "日式拉面",
+        "ラーメン"
+      ],
+      "portion_category": "noodle soup"
+    },
+    "bibimbap": {
+      "aliases": [
+        "dolsot bibimbap",
+        "拌饭",
+        "石锅拌饭",
+        "비빔밥"
+      ],
+      "portion_category": "rice bowl"
+    },
+    "kimchi jjigae": {
+      "aliases": [
+        "kimchi stew",
+        "kimchi chigae",
+        "泡菜汤",
+        "泡菜锅",
+        "김치찌개"
+      ],
+      "portion_category": "stew"
+    },
+    "korean fried chicken": {
+      "aliases": [
+        "yangnyeom chicken",
+        "korean chicken",
+        "韩式炸鸡",
+        "치킨"
+      ],
+      "portion_category": "fried chicken piece"
     }
   }
 }
