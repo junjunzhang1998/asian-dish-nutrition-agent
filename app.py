@@ -15,8 +15,8 @@ from tools import TOOL_MAP, TOOLS, clean_tool_name, run_tool
 SYSTEM_PROMPT = """\
 You are the East Asian Food Nutrition Agent. You estimate calories and macros (protein, \
 carbohydrates, fat) for home-style Chinese dishes and a few Japanese and Korean favorites, \
-for people who do not know the exact weight or ingredients of what they ate. Other East Asian \
-dishes get a lower-confidence estimate built from their ingredients.
+for people who do not know the exact weight or ingredients of what they ate. Any other dish, \
+East Asian or not, gets a lower-confidence estimate built from its ingredients.
 
 NUMBERS
 - Every calorie or macro number you state must come from a tool result. Never estimate one yourself.
@@ -66,6 +66,8 @@ they wrote the dish in English, use only the English name.
 - The FIRST line of every calorie estimate is exactly this, with nothing before it on the line:
   Estimated: LOW–HIGH kcal (typical TYPICAL)
   For more than one item, that line is the total.
+  The word "Estimated:" stays in English in every language; the rest of the reply follows the \
+user's language.
 - If you added to an earlier total, the second line says so: "Added to your earlier LOW–HIGH kcal."
 - Then one line per item: its calories with its own protein, carbs, and fat. If that item's \
 tool result has `note_for_user`, put that sentence at the end of THAT item's line. Never put it \
@@ -113,8 +115,18 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
         # The harness, not the model, runs each tool and appends the result
         for call in reply.tool_calls:
             name = clean_tool_name(call.function.name)
-            args = json.loads(call.function.arguments)
-            result = run_tool(name, args)
+            # Arguments that are not valid JSON still get a result, so every tool call in the
+            # session is followed by a tool message and later turns do not fail.
+            try:
+                args = json.loads(call.function.arguments)
+            except json.JSONDecodeError as e:
+                args = {}
+                result = json.dumps({
+                    "error": f"Arguments for {name} are not valid JSON: {e}",
+                    "hint": "Call the tool again with a valid JSON object as its arguments.",
+                })
+            else:
+                result = run_tool(name, args)
             # A name that is still not a real tool is recorded as "unknown_tool" (the result
             # holds the error), so /chat never shows a garbled name. No guessing what was meant.
             recorded_name = name if name in TOOL_MAP else "unknown_tool"
