@@ -451,6 +451,27 @@
                 }
             }
 
+            /* Wide enough to center the chat with the panel beside it: three columns with
+               an empty one on the left that mirrors the panel's side, so the chat stays at
+               the window's center. The math: 720 + 2 × (300 + 6vw) + 40 padding fits from
+               about 1,546 px; 1600 leaves room for a Windows scrollbar (about 17 px). */
+            @media (min-width: 1600px) {
+                #page {
+                    grid-template-columns: 1fr minmax(0, 720px) 1fr;
+                    justify-content: stretch;
+                }
+                header,
+                #messages,
+                #composer {
+                    grid-column: 2;
+                }
+                #about {
+                    grid-column: 3;
+                    justify-self: start;
+                    width: 300px;
+                }
+            }
+
             @media (max-width: 520px) {
                 #page {
                     padding-top: 1.5rem;
