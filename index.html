@@ -3,194 +3,866 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Gemini Web Tool Calling</title>
+        <title>East Asian Food Nutrition Agent</title>
         <style>
+            :root {
+                --paper: #faf6ef;
+                --card: #fffdf9;
+                --ink: #2e2925;
+                --muted: #857a70;
+                --line: #e8dfd2;
+                --accent: #9b2226;
+                --accent-soft: #f6e9e4;
+                --serif: Georgia, "Iowan Old Style", "Songti SC", "Noto Serif CJK SC", "SimSun", serif;
+                --sans: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+                    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+            }
             * {
                 box-sizing: border-box;
                 margin: 0;
                 padding: 0;
             }
             body {
-                font-family: system-ui, sans-serif;
-                height: 100vh;
+                background: var(--paper);
+                color: var(--ink);
+                font-family: var(--sans);
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            #page {
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 2.5rem 1.25rem 0;
+                min-height: 100vh;
                 display: flex;
+                flex-direction: column;
+            }
+
+            /* --- Header --- */
+            header {
+                text-align: center;
+                padding-bottom: 2rem;
+                border-bottom: 1px solid var(--line);
+            }
+            .illustration {
+                width: 220px;
+                height: auto;
+                color: var(--accent);
+                margin-bottom: 1rem;
+            }
+            h1 {
+                font-family: var(--serif);
+                font-weight: normal;
+                font-size: 2rem;
+                line-height: 1.2;
+                letter-spacing: 0.01em;
+            }
+            .tagline {
+                color: var(--muted);
+                margin-top: 0.6rem;
+            }
+            .examples {
+                display: flex;
+                flex-wrap: wrap;
                 justify-content: center;
-                align-items: center;
-                padding: 3rem 1rem;
+                gap: 0.6rem;
+                margin-top: 1.5rem;
             }
-            #container {
-                width: 100%;
-                max-width: 900px;
-                display: flex;
-                flex-direction: column;
-                border: 1px solid #e0e0e0;
+            .example {
+                font: inherit;
+                font-size: 0.9rem;
+                color: var(--ink);
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                padding: 0.45rem 1rem;
+                cursor: pointer;
+                transition: border-color 0.15s, color 0.15s;
             }
+            .example:hover:not(:disabled) {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+            .example .emoji {
+                margin-right: 0.35rem;
+            }
+
+            /* --- Conversation --- */
             #messages {
-                overflow-y: auto;
-                padding: 2rem;
+                flex: 1;
                 display: flex;
                 flex-direction: column;
-                gap: 1.5rem;
-                min-height: 450px;
-                max-height: 70vh;
+                gap: 1.75rem;
+                padding: 2.5rem 0;
             }
-            .msg {
-                line-height: 1.5;
-                max-width: 80%;
+            .empty {
+                text-align: center;
+                color: var(--muted);
+                font-family: var(--serif);
+                font-style: italic;
+                padding: 2rem 1rem;
             }
-            .msg.user {
+            .user-msg {
                 align-self: flex-end;
-                text-align: right;
-            }
-            .msg .role {
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #999;
-                margin-bottom: 0.25rem;
-            }
-            .msg .content {
+                max-width: 85%;
+                background: var(--accent-soft);
+                border-radius: 14px 14px 4px 14px;
+                padding: 0.6rem 1rem;
                 white-space: pre-wrap;
+                overflow-wrap: anywhere;
             }
-            .msg.loading .content {
-                color: #999;
-            }
-            #input-area {
-                display: flex;
-                gap: 1rem;
+            .entry {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 14px;
                 padding: 1.5rem;
-                border-top: 1px solid #e0e0e0;
+                overflow-wrap: anywhere;
+            }
+            .estimate {
+                border-left: 3px solid var(--accent);
+                padding: 0.1rem 0 0.1rem 1rem;
+                margin-bottom: 1.25rem;
+            }
+            .estimate .label {
+                font-size: 0.75rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .estimate .range {
+                font-family: var(--serif);
+                font-size: 2.1rem;
+                line-height: 1.2;
+                color: var(--accent);
+            }
+            .estimate .range .unit {
+                font-size: 1.1rem;
+                margin-left: 0.25rem;
+            }
+            .estimate .typical {
+                color: var(--ink);
+            }
+            .estimate .added {
+                color: var(--muted);
+                font-size: 0.9rem;
+                margin-top: 0.2rem;
+            }
+            .body p + p,
+            .body p + ul,
+            .body ul + p,
+            .body p + ol,
+            .body ol + p {
+                margin-top: 0.75rem;
+            }
+            .body ul,
+            .body ol {
+                padding-left: 1.25rem;
+            }
+            .body li + li {
+                margin-top: 0.4rem;
+            }
+            .body li::marker {
+                color: var(--accent);
+            }
+            .body code {
+                font-family: ui-monospace, Consolas, monospace;
+                font-size: 0.9em;
+                background: var(--paper);
+                padding: 0 0.25rem;
+                border-radius: 4px;
+            }
+            .follow-up {
+                margin-top: 1.25rem;
+                padding: 0.75rem 1rem;
+                background: var(--paper);
+                border-radius: 10px;
+                font-family: var(--serif);
+                font-style: italic;
+            }
+            .follow-up::before {
+                content: "→ ";
+                color: var(--accent);
+                font-style: normal;
+            }
+            .entry.problem {
+                border-style: dashed;
+                color: var(--muted);
+            }
+            .problem .detail {
+                font-size: 0.8rem;
+                margin-top: 0.5rem;
+            }
+
+            /* --- How I estimated this --- */
+            details.steps {
+                margin-top: 1.25rem;
+                border-top: 1px solid var(--line);
+                padding-top: 0.9rem;
+                font-size: 0.9rem;
+            }
+            details.steps summary {
+                cursor: pointer;
+                color: var(--accent);
+                list-style: none;
+            }
+            details.steps summary::-webkit-details-marker {
+                display: none;
+            }
+            details.steps summary::before {
+                content: "▸";
+                display: inline-block;
+                width: 1rem;
+                transition: transform 0.15s;
+            }
+            details.steps[open] summary::before {
+                transform: rotate(90deg);
+            }
+            details.steps summary .count {
+                color: var(--muted);
+            }
+            .step {
+                margin-top: 0.9rem;
+                padding-left: 1rem;
+                border-left: 2px solid var(--line);
+            }
+            .step .name {
+                font-weight: 600;
+            }
+            .step .num {
+                color: var(--muted);
+                font-weight: normal;
+                margin-right: 0.35rem;
+            }
+            .step dl {
+                display: grid;
+                grid-template-columns: max-content 1fr;
+                gap: 0.15rem 0.75rem;
+                margin-top: 0.3rem;
+            }
+            .step dt {
+                color: var(--muted);
+            }
+            .step ul {
+                padding-left: 1.1rem;
+            }
+            .step.failed {
+                color: var(--muted);
+            }
+            .step.failed .name {
+                font-weight: normal;
+            }
+
+            /* --- Loading --- */
+            .loading {
+                color: var(--muted);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .dots span {
+                display: inline-block;
+                width: 7px;
+                height: 7px;
+                margin-right: 4px;
+                border-radius: 50%;
+                background: var(--accent);
+                animation: bob 1.2s infinite ease-in-out;
+            }
+            .dots span:nth-child(2) {
+                animation-delay: 0.15s;
+            }
+            .dots span:nth-child(3) {
+                animation-delay: 0.3s;
+            }
+            @keyframes bob {
+                0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+                40% { opacity: 1; transform: translateY(-4px); }
+            }
+
+            /* --- Composer --- */
+            #composer {
+                position: sticky;
+                bottom: 0;
+                background: var(--paper);
+                border-top: 1px solid var(--line);
+                padding: 1rem 0 1.25rem;
+                display: flex;
+                gap: 0.6rem;
             }
             #user-input {
                 flex: 1;
-                padding: 0.75rem 0;
-                border: none;
-                border-bottom: 1px solid #e0e0e0;
-                font-size: 1rem;
+                min-width: 0;
+                font: inherit;
+                color: var(--ink);
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                padding: 0.7rem 0.9rem;
                 outline: none;
             }
             #user-input:focus {
-                border-bottom-color: #000;
+                border-color: var(--accent);
             }
-            button {
-                padding: 0.75rem 1.5rem;
-                background: #000;
-                color: #fff;
-                border: none;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
+            .btn {
+                font: inherit;
+                font-size: 0.9rem;
+                border-radius: 10px;
+                padding: 0.7rem 1.1rem;
                 cursor: pointer;
+                border: 1px solid var(--accent);
             }
-            .tool {
-                font-family: ui-monospace, monospace;
-                font-size: 0.75rem;
-                color: #555;
-                background: #f5f5f5;
-                border-left: 3px solid #f59e0b;
-                padding: 0.5rem 0.75rem;
-                margin: 0.25rem 0 0.75rem;
-                white-space: pre-wrap;
-                word-break: break-word;
+            #send-btn {
+                background: var(--accent);
+                color: #fff;
             }
-            .tool .label {
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #b45309;
+            #new-btn {
+                background: transparent;
+                color: var(--accent);
             }
             button:disabled {
-                opacity: 0.3;
+                opacity: 0.45;
+                cursor: default;
+            }
+
+            @media (max-width: 520px) {
+                #page {
+                    padding-top: 1.5rem;
+                }
+                .illustration {
+                    width: 150px;
+                }
+                h1 {
+                    font-size: 1.5rem;
+                }
+                .entry {
+                    padding: 1.1rem;
+                }
+                .estimate .range {
+                    font-size: 1.7rem;
+                }
+                #composer {
+                    flex-wrap: wrap;
+                }
+                #user-input {
+                    flex-basis: 100%;
+                }
+                .btn {
+                    flex: 1;
+                }
+                .step dl {
+                    grid-template-columns: 1fr;
+                }
+                .step dd {
+                    margin-bottom: 0.3rem;
+                }
             }
         </style>
     </head>
     <body>
-        <div id="container">
-            <div id="messages"></div>
-            <div id="input-area">
+        <div id="page">
+            <header>
+                <svg
+                    class="illustration"
+                    viewBox="0 0 230 100"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    role="img"
+                    aria-label="A bamboo steamer of dumplings next to a bowl of noodles with chopsticks"
+                >
+                    <!-- Steam -->
+                    <path d="M48 22 q-4 -5 0 -10 q4 -5 0 -10" />
+                    <path d="M72 22 q-4 -5 0 -10 q4 -5 0 -10" />
+                    <path d="M150 30 q-4 -5 0 -10 q4 -5 0 -10" />
+                    <!-- Steamer: back rim, dumplings, then front rim and basket -->
+                    <path d="M16 52 A44 10 0 0 1 104 52" />
+                    <g fill="var(--paper)">
+                        <path d="M26 53 C26 40 33 33 38 31 C43 33 50 40 50 53 Z" />
+                        <path d="M70 53 C70 40 77 33 82 31 C87 33 94 40 94 53 Z" />
+                        <path d="M47 55 C47 40 54 31 60 29 C66 31 73 40 73 55 Z" />
+                    </g>
+                    <path d="M38 31 l-3 8 M38 31 l3 8 M82 31 l-3 8 M82 31 l3 8 M60 29 l-3 9 M60 29 l3 9" />
+                    <path d="M16 52 A44 10 0 0 0 104 52" />
+                    <path d="M16 52 V74 A44 10 0 0 0 104 74 V52" />
+                    <path d="M16 63 A44 10 0 0 0 104 63" />
+                    <path d="M38 71 v10 M60 73 v10 M82 71 v10" />
+                    <!-- Chopsticks, behind the bowl -->
+                    <path d="M150 50 L214 14 M158 52 L220 22" />
+                    <!-- Bowl of noodles -->
+                    <path d="M120 54 A40 6 0 0 1 200 54" />
+                    <path d="M128 52 q5 -7 10 0 t10 0 t10 0 t10 0 t10 0 t10 0" />
+                    <path d="M120 54 A40 6 0 0 0 200 54" />
+                    <path d="M120 54 A40 30 0 0 0 200 54" />
+                    <path d="M147 83 l-3 8 h32 l-3 -8" />
+                    <path d="M140 66 h40" stroke-dasharray="2 6" />
+                </svg>
+                <h1>East Asian Food Nutrition Agent</h1>
+                <p class="tagline">
+                    Tell me what you ate, in English or Chinese, and I'll estimate the calories
+                    and macros.
+                </p>
+                <div class="examples">
+                    <button class="example" data-prompt="6 xiaolongbao and a plate of stir-fried greens">
+                        <span class="emoji">🥟</span>6 xiaolongbao and a plate of stir-fried greens
+                    </button>
+                    <button class="example" data-prompt="a bowl of ramen">
+                        <span class="emoji">🍜</span>a bowl of ramen
+                    </button>
+                    <button class="example" data-prompt="a bowl of bibimbap">
+                        <span class="emoji">🍚</span>a bowl of bibimbap
+                    </button>
+                    <button class="example" lang="zh-Hans" data-prompt="一盘麻婆豆腐和一碗米饭">
+                        <span class="emoji">🌶️</span>一盘麻婆豆腐和一碗米饭
+                    </button>
+                </div>
+            </header>
+
+            <main id="messages" aria-live="polite"></main>
+
+            <form id="composer">
                 <input
                     type="text"
                     id="user-input"
-                    placeholder="Type a message..."
+                    placeholder="e.g. a plate of dumplings"
                     autocomplete="off"
                 />
-                <button id="send-btn">Send</button>
-            </div>
+                <button type="submit" id="send-btn" class="btn">Send</button>
+                <button type="button" id="new-btn" class="btn">New chat</button>
+            </form>
         </div>
+
         <script>
             const messages = document.getElementById("messages");
+            const composer = document.getElementById("composer");
             const userInput = document.getElementById("user-input");
             const sendBtn = document.getElementById("send-btn");
+            const newBtn = document.getElementById("new-btn");
+            const exampleBtns = document.querySelectorAll(".example");
             let sessionId = null;
+            let busy = false;
 
-            function addMessage(role, text, isLoading = false) {
-                const div = document.createElement("div");
-                div.className =
-                    "msg " +
-                    (role === "you" ? "user" : "assistant") +
-                    (isLoading ? " loading" : "");
-                div.innerHTML =
-                    '<div class="role">' +
-                    role +
-                    '</div><div class="content">' +
-                    text +
-                    "</div>";
-                messages.appendChild(div);
-                messages.scrollTop = messages.scrollHeight;
-                return div;
+            const EMPTY_TEXT =
+                "Nothing logged yet. Tap an example above or tell me about your last meal.";
+            const LOADING_TEXTS = [
+                "Reading your meal…",
+                "Weighing the portions…",
+                "Checking the nutrition data…",
+                "Adding it all up…",
+            ];
+
+            // --- Small helpers ---
+
+            function el(tag, className, text) {
+                const node = document.createElement(tag);
+                if (className) node.className = className;
+                if (text !== undefined) node.textContent = text;
+                return node;
             }
 
-            async function send() {
-                const text = userInput.value.trim();
-                if (!text) return;
+            // Chinese text gets lang="zh-Hans" so the browser picks Chinese glyphs.
+            function setLang(node, text) {
+                if (/[㐀-鿿]/.test(text)) node.lang = "zh-Hans";
+            }
+
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function formatNumber(n) {
+                return typeof n === "number" ? n.toLocaleString("en-US") : String(n);
+            }
+
+            function scrollToBottom() {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            }
+
+            // --- Markdown: bold, italics, code, bullet and numbered lists ---
+
+            function renderInline(text) {
+                return escapeHtml(text)
+                    .replace(/`([^`]+)`/g, "<code>$1</code>")
+                    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+                    .replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>");
+            }
+
+            const BULLET = /^(\s*)[-*•]\s+(.*)$/;
+            const NUMBERED = /^(\s*)\d+[.)]\s+(.*)$/;
+
+            // Lines become paragraphs (one <br> per line break) or lists; a blank line starts
+            // a new paragraph. Indented list items nest one level under the item above.
+            function renderMarkdown(text) {
+                let html = "";
+                let paragraph = [];
+                let list = null; // { tag, items: [{ html, children: [] }] }
+
+                function flushParagraph() {
+                    if (paragraph.length) html += "<p>" + paragraph.join("<br>") + "</p>";
+                    paragraph = [];
+                }
+                function flushList() {
+                    if (!list) return;
+                    html += "<" + list.tag + ">";
+                    for (const item of list.items) {
+                        html += "<li>" + item.html;
+                        if (item.children.length) {
+                            html += "<ul>" + item.children.map((c) => "<li>" + c + "</li>").join("") + "</ul>";
+                        }
+                        html += "</li>";
+                    }
+                    html += "</" + list.tag + ">";
+                    list = null;
+                }
+
+                for (const raw of text.split(/\r?\n/)) {
+                    const line = raw.replace(/\s+$/, "");
+                    const heading = line.match(/^#{1,6}\s+(.*)$/);
+                    const match = line.match(BULLET) || line.match(NUMBERED);
+                    if (!line.trim()) {
+                        flushParagraph();
+                        flushList();
+                    } else if (match) {
+                        flushParagraph();
+                        const indented = match[1].length >= 2;
+                        if (indented && list && list.items.length) {
+                            list.items[list.items.length - 1].children.push(renderInline(match[2]));
+                            continue;
+                        }
+                        const tag = BULLET.test(line) ? "ul" : "ol";
+                        if (list && list.tag !== tag) flushList();
+                        if (!list) list = { tag, items: [] };
+                        list.items.push({ html: renderInline(match[2]), children: [] });
+                    } else if (heading) {
+                        flushParagraph();
+                        flushList();
+                        html += "<p><strong>" + renderInline(heading[1]) + "</strong></p>";
+                    } else {
+                        flushList();
+                        paragraph.push(renderInline(line.trim()));
+                    }
+                }
+                flushParagraph();
+                flushList();
+                return html;
+            }
+
+            // --- Reading the reply: estimate line, body, follow-up question ---
+
+            // "Estimated: 380–762 kcal (typical 571)", with a hyphen, en dash or em dash,
+            // optional bold markers, and a full-width colon in Chinese replies.
+            const ESTIMATE_LINE =
+                /Estimated\s*[:：]\s*\**\s*([\d,.]+)\s*(?:kcal\s*)?[-–—]\s*([\d,.]+)\s*kcal\s*\**\s*[(（]\s*typical\s*([\d,.]+)\s*(?:kcal)?\s*[)）]/i;
+            const ADDED_LINE = /^\W*Added to your earlier/i;
+
+            function stripMarkdown(line) {
+                return line.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "").replace(/[*_`]/g, "").trim();
+            }
+
+            function parseReply(text) {
+                const lines = text.split(/\r?\n/);
+                let estimate = null;
+
+                const index = lines.findIndex((line) => ESTIMATE_LINE.test(line));
+                if (index !== -1) {
+                    const m = lines[index].match(ESTIMATE_LINE);
+                    estimate = { low: m[1], high: m[2], typical: m[3], added: null };
+                    lines.splice(index, 1);
+                    // The "Added to your earlier …" line belongs with the total.
+                    const next = lines.findIndex((line, i) => i >= index && line.trim());
+                    if (next !== -1 && ADDED_LINE.test(lines[next])) {
+                        estimate.added = stripMarkdown(lines[next]);
+                        lines.splice(next, 1);
+                    }
+                }
+
+                let followUp = null;
+                let last = lines.length - 1;
+                while (last >= 0 && !lines[last].trim()) last--;
+                if (last >= 0 && /[?？]$/.test(stripMarkdown(lines[last]))) {
+                    followUp = stripMarkdown(lines[last]);
+                    lines.splice(last, 1);
+                }
+
+                return { estimate, body: lines.join("\n").trim(), followUp };
+            }
+
+            // --- How I estimated this ---
+
+            const TOOL_LABELS = {
+                lookup_food_nutrition: "Looked up nutrition per 100 g",
+                estimate_portion_size: "Estimated the portion weight",
+                estimate_dish_nutrition: "Estimated the dish's nutrition",
+            };
+
+            function grams(low, high) {
+                if (low === undefined || low === null) return null;
+                return low === high || high === undefined
+                    ? formatNumber(low) + " g"
+                    : formatNumber(low) + "–" + formatNumber(high) + " g";
+            }
+
+            // Returns [label, value] rows for the arguments and for the key result fields.
+            function describeCall(call, result) {
+                const a = call.args || {};
+                const r = result || {};
+                const args = [];
+                const out = [];
+
+                if (call.name === "lookup_food_nutrition") {
+                    args.push(["Food", a.food_name]);
+                    out.push(["Matched", r.matched_description]);
+                    const p = r.per_100g;
+                    if (p) {
+                        out.push([
+                            "Per 100 g",
+                            `${formatNumber(p.calories_kcal)} kcal · ${p.protein_g} g protein · ${p.carbs_g} g carbs · ${p.fat_g} g fat`,
+                        ]);
+                    }
+                    out.push(["Match", r.match_quality]);
+                    out.push(["Source", r.source]);
+                } else if (call.name === "estimate_portion_size") {
+                    args.push(["Food", a.food_name]);
+                    const unit = a.unit && a.quantity !== 1 ? a.unit + "s" : a.unit;
+                    args.push(["Amount", [a.quantity, a.size, unit].filter((x) => x !== undefined && x !== null).join(" ")]);
+                    if (r.grams_low !== undefined) {
+                        out.push(["Weight", `${grams(r.grams_low, r.grams_high)} (typical ${formatNumber(r.grams_typical)} g)`]);
+                    }
+                    out.push(["Assumption", r.assumption]);
+                } else if (call.name === "estimate_dish_nutrition") {
+                    args.push(["Dish", a.dish_name]);
+                    args.push(["Portion", grams(a.grams_low, a.grams_high)]);
+                    if (a.oil_level) args.push(["Oil", a.oil_level]);
+                    if (Array.isArray(a.ingredients) && a.ingredients.length) {
+                        args.push([
+                            "Ingredients",
+                            a.ingredients.map((i) => `${i.name} ${grams(i.grams_low, i.grams_high) || ""}`.trim()),
+                        ]);
+                    }
+                    const c = r.calories;
+                    if (c) {
+                        out.push(["Calories", `${formatNumber(c.low)}–${formatNumber(c.high)} kcal (typical ${formatNumber(c.typical)})`]);
+                        out.push(["Macros", `${r.protein_g} g protein · ${r.carbs_g} g carbs · ${r.fat_g} g fat`]);
+                    }
+                    if (r.biggest_uncertainty) out.push(["Main uncertainty", r.biggest_uncertainty.replace(/_/g, " ")]);
+                    if (r.confidence) out.push(["Confidence", r.confidence.replace(/_/g, " ")]);
+                    if (Array.isArray(r.assumptions) && r.assumptions.length) out.push(["Assumptions", r.assumptions]);
+                    if (Array.isArray(r.sources) && r.sources.length) out.push(["Sources", r.sources.join("; ")]);
+                } else {
+                    for (const [key, value] of Object.entries(a)) {
+                        args.push([key.replace(/_/g, " "), typeof value === "object" ? JSON.stringify(value) : String(value)]);
+                    }
+                }
+                const filled = (rows) => rows.filter(([, v]) => v !== undefined && v !== null && v !== "");
+                return [...filled(args), ...filled(out)];
+            }
+
+            function renderStep(call, number) {
+                const step = el("div", "step");
+                let result = null;
+                try {
+                    result = JSON.parse(call.result);
+                } catch (e) {
+                    result = null;
+                }
+
+                const label = TOOL_LABELS[call.name] || "Called an unknown tool";
+                const title = el("div", "name");
+                title.appendChild(el("span", "num", number + "."));
+                title.appendChild(document.createTextNode(label));
+                step.appendChild(title);
+
+                // A failed call is one muted line with its error message.
+                const error =
+                    result && typeof result === "object" && result.error
+                        ? result.error
+                        : result === null
+                          ? "The tool returned something unreadable."
+                          : null;
+                if (error) {
+                    step.classList.add("failed");
+                    title.appendChild(document.createTextNode(" — " + error));
+                    setLang(step, error);
+                    return step;
+                }
+
+                const dl = el("dl");
+                for (const [key, value] of describeCall(call, result)) {
+                    dl.appendChild(el("dt", "", key));
+                    const dd = el("dd");
+                    if (Array.isArray(value)) {
+                        const ul = el("ul");
+                        for (const item of value) ul.appendChild(el("li", "", item));
+                        dd.appendChild(ul);
+                    } else {
+                        dd.textContent = String(value);
+                    }
+                    setLang(dd, dd.textContent);
+                    dl.appendChild(dd);
+                }
+                step.appendChild(dl);
+                return step;
+            }
+
+            function renderSteps(toolCalls) {
+                const details = el("details", "steps");
+                const summary = el("summary", "", "How I estimated this ");
+                const n = toolCalls.length;
+                summary.appendChild(el("span", "count", `· ${n} step${n === 1 ? "" : "s"}`));
+                details.appendChild(summary);
+                toolCalls.forEach((call, i) => details.appendChild(renderStep(call, i + 1)));
+                return details;
+            }
+
+            // --- Messages ---
+
+            function showEmpty() {
+                messages.replaceChildren(el("p", "empty", EMPTY_TEXT));
+            }
+
+            function addUserMessage(text) {
+                messages.querySelector(".empty")?.remove();
+                const div = el("div", "user-msg", text);
+                setLang(div, text);
+                messages.appendChild(div);
+            }
+
+            function addLoading() {
+                const entry = el("div", "entry loading");
+                const dots = el("span", "dots");
+                dots.append(el("span"), el("span"), el("span"));
+                const text = el("span", "", LOADING_TEXTS[0]);
+                entry.append(dots, text);
+                messages.appendChild(entry);
+                let i = 0;
+                const timer = setInterval(() => {
+                    i = Math.min(i + 1, LOADING_TEXTS.length - 1);
+                    text.textContent = LOADING_TEXTS[i];
+                }, 2500);
+                return { entry, stop: () => clearInterval(timer) };
+            }
+
+            function renderAnswer(text, toolCalls) {
+                const entry = el("article", "entry");
+                setLang(entry, text);
+                const { estimate, body, followUp } = parseReply(text);
+
+                if (estimate) {
+                    const box = el("div", "estimate");
+                    box.appendChild(el("div", "label", "Estimated"));
+                    const range = el("div", "range", `${estimate.low}–${estimate.high}`);
+                    range.appendChild(el("span", "unit", "kcal"));
+                    box.appendChild(range);
+                    box.appendChild(el("div", "typical", `typical ${estimate.typical} kcal`));
+                    if (estimate.added) box.appendChild(el("div", "added", estimate.added));
+                    entry.appendChild(box);
+                }
+                if (body) {
+                    const div = el("div", "body");
+                    div.innerHTML = renderMarkdown(body); // escaped inside renderInline
+                    entry.appendChild(div);
+                }
+                if (followUp) entry.appendChild(el("p", "follow-up", followUp));
+                if (toolCalls.length) entry.appendChild(renderSteps(toolCalls));
+                return entry;
+            }
+
+            function renderProblem(message, detail) {
+                const entry = el("div", "entry problem", message);
+                if (detail) entry.appendChild(el("div", "detail", detail));
+                return entry;
+            }
+
+            // --- Talking to the server ---
+
+            function setBusy(value) {
+                busy = value;
+                sendBtn.disabled = value;
+                newBtn.disabled = value;
+                exampleBtns.forEach((b) => (b.disabled = value));
+            }
+
+            async function send(text) {
+                text = text.trim();
+                if (!text || busy) return;
 
                 userInput.value = "";
-                sendBtn.disabled = true;
-                addMessage("you", text);
-                const loading = addMessage("assistant", "Thinking...", true);
+                setBusy(true);
+                addUserMessage(text);
+                const loading = addLoading();
+                scrollToBottom();
 
+                let answer;
                 try {
                     const res = await fetch("/chat", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            message: text,
-                            session_id: sessionId,
-                        }),
+                        body: JSON.stringify({ message: text, session_id: sessionId }),
                     });
-                    const data = await res.json();
-                    sessionId = data.session_id;
-
-                    // Show each tool the harness ran, above the assistant's answer
-                    for (const call of data.tool_calls || []) {
-                        const div = document.createElement("div");
-                        div.className = "tool";
-                        const label = document.createElement("span");
-                        label.className = "label";
-                        label.textContent = "tool call  ";
-                        div.appendChild(label);
-                        div.appendChild(
-                            document.createTextNode(
-                                call.name + "(" + JSON.stringify(call.args) + ")\n→ " + call.result,
-                            ),
-                        );
-                        messages.insertBefore(div, loading);
+                    let data = null;
+                    try {
+                        data = await res.json();
+                    } catch (e) {
+                        data = null;
                     }
-                    loading.querySelector(".content").textContent =
-                        data.response;
-                    loading.classList.remove("loading");
+                    if (!res.ok || !data || typeof data.response !== "string") {
+                        answer = renderProblem(
+                            "Sorry, something went wrong on my side. Please try again in a moment.",
+                            `Server answered with status ${res.status}${data ? "" : " and no readable reply"}.`,
+                        );
+                    } else {
+                        sessionId = data.session_id || sessionId;
+                        if (data.response.startsWith("Model call failed:")) {
+                            answer = renderProblem(
+                                "Sorry, I couldn't reach the language model just now. Please try again.",
+                                data.response,
+                            );
+                        } else {
+                            answer = renderAnswer(data.response, Array.isArray(data.tool_calls) ? data.tool_calls : []);
+                        }
+                    }
                 } catch (e) {
-                    loading.querySelector(".content").textContent =
-                        "Error: " + e.message;
-                    loading.classList.remove("loading");
+                    answer = renderProblem(
+                        "I couldn't reach the server. Check that it is still running, then try again.",
+                    );
                 }
-                sendBtn.disabled = false;
+
+                loading.stop();
+                loading.entry.replaceWith(answer);
+                setBusy(false);
+                answer.scrollIntoView({ behavior: "smooth", block: "start" });
                 userInput.focus();
             }
 
-            sendBtn.addEventListener("click", send);
-            userInput.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") send();
+            async function newChat() {
+                if (busy) return;
+                const old = sessionId;
+                sessionId = null;
+                showEmpty();
+                userInput.value = "";
+                userInput.focus();
+                if (old) {
+                    try {
+                        await fetch("/clear?session_id=" + encodeURIComponent(old), { method: "POST" });
+                    } catch (e) {
+                        // The server forgets it on restart anyway.
+                    }
+                }
+            }
+
+            composer.addEventListener("submit", (e) => {
+                e.preventDefault();
+                send(userInput.value);
             });
+            newBtn.addEventListener("click", newChat);
+            exampleBtns.forEach((b) => b.addEventListener("click", () => send(b.dataset.prompt)));
+
+            showEmpty();
             userInput.focus();
         </script>
     </body>
