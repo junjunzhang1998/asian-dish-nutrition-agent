@@ -42,7 +42,6 @@
             header {
                 text-align: center;
                 padding-bottom: 2rem;
-                border-bottom: 1px solid var(--line);
             }
             .illustration {
                 width: 220px;
@@ -87,6 +86,91 @@
                 margin-right: 0.35rem;
             }
 
+            /* --- How this agent works --- */
+            #about {
+                margin-bottom: 2rem;
+            }
+            #about summary {
+                cursor: pointer;
+                color: var(--accent);
+                width: fit-content;
+                margin: 0 auto;
+                list-style: none;
+            }
+            #about summary:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 3px;
+                border-radius: 6px;
+            }
+            #about summary::-webkit-details-marker {
+                display: none;
+            }
+            #about summary::before {
+                content: "▸";
+                display: inline-block;
+                width: 1rem;
+                transition: transform 0.15s;
+            }
+            #about[open] summary::before {
+                transform: rotate(90deg);
+            }
+            .tool-cards {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                margin-top: 1rem;
+            }
+            .tool-card {
+                background: var(--card);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                padding: 0.9rem 1rem;
+                font-size: 0.9rem;
+                transition: border-color 0.2s, background 0.2s;
+            }
+            .tool-card.used {
+                border-color: var(--accent);
+                background: var(--accent-soft);
+            }
+            .tool-card code,
+            .tool-id {
+                font-family: ui-monospace, Consolas, monospace;
+                overflow-wrap: anywhere;
+            }
+            .tool-card code {
+                font-size: 0.85rem;
+                color: var(--accent);
+            }
+            .tool-card p {
+                margin: 0.3rem 0 0.5rem;
+            }
+            .tool-card .tag {
+                display: inline-block;
+                font-size: 0.75rem;
+                color: var(--muted);
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                padding: 0.05rem 0.6rem;
+            }
+            .tool-card.used .tag {
+                color: var(--accent);
+                border-color: var(--accent);
+            }
+            .tool-card .used-note {
+                display: none;
+                font-size: 0.75rem;
+                color: var(--accent);
+                margin-left: 0.4rem;
+            }
+            .tool-card.used .used-note {
+                display: inline;
+            }
+            .about-flow {
+                color: var(--muted);
+                font-size: 0.85rem;
+                margin-top: 1rem;
+            }
+
             /* --- Conversation --- */
             #messages {
                 flex: 1;
@@ -94,6 +178,7 @@
                 flex-direction: column;
                 gap: 1.75rem;
                 padding: 2.5rem 0;
+                border-top: 1px solid var(--line);
             }
             .empty {
                 text-align: center;
@@ -233,6 +318,12 @@
                 font-weight: normal;
                 margin-right: 0.35rem;
             }
+            .step .tool-id {
+                font-size: 0.75rem;
+                font-weight: normal;
+                color: var(--muted);
+                margin-left: 0.5rem;
+            }
             .step dl {
                 display: grid;
                 grid-template-columns: max-content 1fr;
@@ -322,6 +413,40 @@
             button:disabled {
                 opacity: 0.45;
                 cursor: default;
+            }
+
+            /* Wide screens: the tool panel gets its own column and stays in view. */
+            @media (min-width: 1000px) {
+                #page {
+                    max-width: 1100px;
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) 300px;
+                    grid-template-rows: auto 1fr auto;
+                    column-gap: 2.5rem;
+                }
+                header,
+                #messages,
+                #composer {
+                    grid-column: 1;
+                }
+                #about {
+                    grid-column: 2;
+                    grid-row: 1 / span 3;
+                    align-self: start;
+                    position: sticky;
+                    top: 1.5rem;
+                    margin-bottom: 1.5rem;
+                }
+                #about summary {
+                    pointer-events: none;
+                    margin: 0;
+                    font-family: var(--serif);
+                    font-size: 1.2rem;
+                    color: var(--ink);
+                }
+                #about summary::before {
+                    display: none;
+                }
             }
 
             @media (max-width: 520px) {
@@ -418,6 +543,34 @@
                     </button>
                 </div>
             </header>
+
+            <details id="about">
+                <summary>How this agent works</summary>
+                <div class="tool-cards">
+                    <div class="tool-card" data-tool="lookup_food_nutrition">
+                        <code>lookup_food_nutrition</code><span class="used-note">· used just now</span>
+                        <p>Looks up calories and macros per 100 g for a food or ingredient.</p>
+                        <span class="tag">Live USDA data</span>
+                    </div>
+                    <div class="tool-card" data-tool="estimate_portion_size">
+                        <code>estimate_portion_size</code><span class="used-note">· used just now</span>
+                        <p>Turns an everyday amount (6 pieces, a bowl, a plate) into a weight range in grams.</p>
+                        <span class="tag">Built-in portion rules</span>
+                    </div>
+                    <div class="tool-card" data-tool="estimate_dish_nutrition">
+                        <code>estimate_dish_nutrition</code><span class="used-note">· used just now</span>
+                        <p>
+                            Works out a dish's calories and macros from its ingredients, using a built-in
+                            recipe or an ingredient list.
+                        </p>
+                        <span class="tag">15 recipes + USDA</span>
+                    </div>
+                </div>
+                <p class="about-flow">
+                    Ask about a dish and the agent estimates the portion, then the dish. Ask 'protein in
+                    100 g of tofu' for a direct lookup.
+                </p>
+            </details>
 
             <main id="messages" aria-live="polite"></main>
 
@@ -600,6 +753,11 @@
                 estimate_dish_nutrition: "Estimated the dish's nutrition",
             };
 
+            const CONFIDENCE_LABELS = {
+                template: "built-in recipe",
+                ingredient_estimate: "ingredient estimate",
+            };
+
             function grams(low, high) {
                 if (low === undefined || low === null) return null;
                 return low === high || high === undefined
@@ -650,7 +808,7 @@
                         out.push(["Macros", `${r.protein_g} g protein · ${r.carbs_g} g carbs · ${r.fat_g} g fat`]);
                     }
                     if (r.biggest_uncertainty) out.push(["Main uncertainty", r.biggest_uncertainty.replace(/_/g, " ")]);
-                    if (r.confidence) out.push(["Confidence", r.confidence.replace(/_/g, " ")]);
+                    if (r.confidence) out.push(["Confidence", CONFIDENCE_LABELS[r.confidence] || r.confidence.replace(/_/g, " ")]);
                     if (Array.isArray(r.assumptions) && r.assumptions.length) out.push(["Assumptions", r.assumptions]);
                     if (Array.isArray(r.sources) && r.sources.length) out.push(["Sources", r.sources.join("; ")]);
                 } else {
@@ -675,6 +833,7 @@
                 const title = el("div", "name");
                 title.appendChild(el("span", "num", number + "."));
                 title.appendChild(document.createTextNode(label));
+                title.appendChild(el("code", "tool-id", call.name));
                 step.appendChild(title);
 
                 // A failed call is one muted line with its error message.
@@ -778,6 +937,29 @@
                 return entry;
             }
 
+            // --- How this agent works ---
+
+            // Highlights the cards of the tools the latest answer used.
+            function highlightTools(toolCalls) {
+                const used = new Set(toolCalls.map((call) => call.name));
+                for (const card of document.querySelectorAll(".tool-card")) {
+                    card.classList.toggle("used", used.has(card.dataset.tool));
+                }
+            }
+
+            // Always open in the wide-screen side column; closed by default when narrow.
+            const about = document.getElementById("about");
+            const wide = window.matchMedia("(min-width: 1000px)");
+            function fitAbout() {
+                about.open = wide.matches;
+                about.querySelector("summary").tabIndex = wide.matches ? -1 : 0;
+            }
+            wide.addEventListener("change", fitAbout);
+            about.addEventListener("toggle", () => {
+                if (wide.matches && !about.open) about.open = true;
+            });
+            fitAbout();
+
             // --- Talking to the server ---
 
             function setBusy(value) {
@@ -798,6 +980,7 @@
                 scrollToBottom();
 
                 let answer;
+                let toolCalls = [];
                 try {
                     const res = await fetch("/chat", {
                         method: "POST",
@@ -823,7 +1006,8 @@
                                 data.response,
                             );
                         } else {
-                            answer = renderAnswer(data.response, Array.isArray(data.tool_calls) ? data.tool_calls : []);
+                            toolCalls = Array.isArray(data.tool_calls) ? data.tool_calls : [];
+                            answer = renderAnswer(data.response, toolCalls);
                         }
                     }
                 } catch (e) {
@@ -834,6 +1018,7 @@
 
                 loading.stop();
                 loading.entry.replaceWith(answer);
+                highlightTools(toolCalls);
                 setBusy(false);
                 answer.scrollIntoView({ behavior: "smooth", block: "start" });
                 userInput.focus();
@@ -844,6 +1029,7 @@
                 const old = sessionId;
                 sessionId = null;
                 showEmpty();
+                highlightTools([]);
                 userInput.value = "";
                 userInput.focus();
                 if (old) {
