@@ -230,6 +230,21 @@ for dish, entry in DISHES.items():
     for alias in entry["aliases"]:
         DISH_ALIASES[alias.lower()] = dish
 
+# Above this share of an ingredient list's typical weight, flour and starch with no water item
+# almost always mean dry flour was listed at the weight of the cooked food.
+MAX_DRY_FLOUR_SHARE = 0.40
+
+
+def is_water(name: str) -> bool:
+    # Exact match only: "water chestnuts" and "water spinach" are foods.
+    return " ".join(name.lower().split()) == "water"
+
+
+def is_flour_or_starch(name: str) -> bool:
+    name = name.lower()
+    return "flour" in name or "starch" in name
+
+
 NO_INGREDIENT_HINT = (
     "Replace it with a closer generic ingredient (e.g. 'chili bean paste' or 'soy sauce') "
     "or drop it if the amount is small, then call again."
@@ -323,6 +338,24 @@ def parse_ingredients(ingredients) -> tuple[list, str | None]:
     return items, None
 
 
+def check_dry_flour(items: list) -> str | None:
+    """Error JSON if flour and starch are too much of a list that has no water, else None."""
+    if any(is_water(item["name"]) for item in items):
+        return None  # with water, any flour share is allowed, so the retry can always pass
+    total = sum((item["grams_low"] + item["grams_high"]) / 2 for item in items)
+    flour = sum((item["grams_low"] + item["grams_high"]) / 2 for item in items if is_flour_or_starch(item["name"]))
+    if total <= 0 or flour / total <= MAX_DRY_FLOUR_SHARE:
+        return None
+    return error_json(
+        "The ingredient list looks like dry flour or starch at the weight of the cooked food.",
+        f"Flour and starch make up {flour / total * 100:.0f}% of this dish's weight and the list has "
+        "no water. Cooked dough and batter hold water: a lot for rice cakes, noodles and batter, some "
+        "for steamed buns and bread, very little for fried dough, crackers and cookies. Call again with "
+        "the flour at its dry weight and a 'water' item for the water the cooked food holds, so the "
+        "total equals the portion eaten.",
+    )
+
+
 def ingredient_lines(items: list, oil_level: str) -> list:
     """Turn the model's ingredient list into lines. Only the fats are narrowed by oil_level."""
     lines = []
@@ -350,6 +383,8 @@ def add_up(lines: list) -> tuple[dict, list, list, list]:
     assumptions, sources, close_matches = [], [], []
 
     for line in lines:
+        if is_water(line["name"]):
+            continue  # 0 kcal and no macros; its grams still count in the portion weight
         try:
             food = get_food_nutrition(line["name"])  # the same helper as lookup_food_nutrition
         except USDAError as e:
@@ -401,6 +436,9 @@ def estimate_dish_nutrition(
     # 1. The model (or the user) gave the ingredients: calculate from those.
     if ingredients:
         items, error = parse_ingredients(ingredients)
+        if error:
+            return error
+        error = check_dry_flour(items)
         if error:
             return error
         lines = ingredient_lines(items, oil_level)
@@ -621,7 +659,11 @@ TOOLS = [
                             "ingredients. One item per ingredient (never combine two ingredients in one "
                             "item), with grams for the amount actually eaten. Always include cooking oil, "
                             "breading or batter (e.g. 'wheat flour', 'cornstarch'), sauces, and sugar: they "
-                            "carry most of the hidden calories. Example: "
+                            "carry most of the hidden calories. Amounts are as eaten: put a dry "
+                            "ingredient like flour or starch in at its dry weight, and the water or stock "
+                            "the cooked food holds as a separate 'water' item (a lot for rice cakes, "
+                            "noodles and batter, some for steamed buns and bread, very little for fried "
+                            "dough, crackers and cookies). Example: "
                             "[{'name': 'egg', 'grams_low': 50, 'grams_high': 100}, {'name': 'cooking oil', "
                             "'grams_low': 5, 'grams_high': 15}]. Prefer these names, which have exact USDA "
                             "data: " + ", ".join(FOODS) + ". Any other name is searched in USDA and may "

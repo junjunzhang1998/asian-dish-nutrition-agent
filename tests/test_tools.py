@@ -497,3 +497,70 @@ def test_live_usda_lookup():
     assert searched["match_quality"] == "close"
     assert set(searched) == RESULT_KEYS
     assert searched["matched_description"] == "Mollusks, squid, mixed species, raw"  # SR Legacy, raw
+
+
+# --- Dry flour listed at the cooked weight ---
+
+TAKOYAKI_FLOUR = {"name": "wheat flour", "grams_low": 70, "grams_high": 130}
+TAKOYAKI_REST = [
+    {"name": "egg", "grams_low": 20, "grams_high": 40},
+    {"name": "scallion", "grams_low": 5, "grams_high": 10},
+    {"name": "cooking oil", "grams_low": 5, "grams_high": 15},
+]
+
+
+def test_flour_heavy_list_without_water_returns_error_with_hint(offline):
+    result = dish("takoyaki", ingredients=[TAKOYAKI_FLOUR, *TAKOYAKI_REST])
+    assert result["error"]
+    assert "Flour and starch make up 68% of this dish's weight" in result["hint"]
+    assert "'water' item" in result["hint"]
+
+
+def test_same_weight_with_water_passes_with_fewer_calories(offline):
+    # Same flour weight as above, but half of it is now the water the batter holds.
+    with_water = [{"name": "wheat flour", "grams_low": 35, "grams_high": 65},
+                  {"name": "water", "grams_low": 35, "grams_high": 65}, *TAKOYAKI_REST]
+    result = dish("takoyaki", ingredients=with_water)
+    assert (result["grams_low"], result["grams_high"]) == (100, 195)  # same total as the flour-only list
+
+    all_flour = [{"name": "wheat flour", "grams_low": 70, "grams_high": 130}, *TAKOYAKI_REST]
+    flour_kcal = sum(
+        (i["grams_low"] + i["grams_high"]) / 2 * tools.SNAPSHOT[i["name"]]["per_100g"]["calories_kcal"] / 100
+        for i in all_flour
+    )
+    assert result["calories"]["typical"] < flour_kcal
+
+
+def test_breaded_dish_with_a_little_starch_and_no_water_passes(offline):
+    result = dish("fried chicken", ingredients=[
+        {"name": "chicken breast", "grams_low": 150, "grams_high": 200},
+        {"name": "cornstarch", "grams_low": 15, "grams_high": 25},
+        {"name": "wheat flour", "grams_low": 10, "grams_high": 15},
+        {"name": "cooking oil", "grams_low": 10, "grams_high": 20},
+    ])
+    assert "error" not in result
+
+
+def test_fried_dough_mostly_flour_with_a_little_water_passes(offline):
+    result = dish("youtiao", ingredients=[
+        {"name": "wheat flour", "grams_low": 40, "grams_high": 60},
+        {"name": "cooking oil", "grams_low": 10, "grams_high": 20},
+        {"name": "water", "grams_low": 5, "grams_high": 10},
+    ])
+    assert "error" not in result
+    assert result["calories"]["low"] > 0
+
+
+def test_water_adds_grams_but_no_calories_and_no_usda_call(offline, monkeypatch):
+    looked_up = []
+    real = tools.get_food_nutrition
+    monkeypatch.setattr(tools, "get_food_nutrition", lambda name: looked_up.append(name) or real(name))
+    egg = {"name": "egg", "grams_low": 100, "grams_high": 100}
+
+    plain = dish("steamed egg", ingredients=[egg])
+    watered = dish("steamed egg", ingredients=[egg, {"name": "Water", "grams_low": 50, "grams_high": 50}])
+
+    assert watered["grams_low"] == plain["grams_low"] + 50
+    assert watered["calories"] == plain["calories"]
+    assert (watered["protein_g"], watered["carbs_g"], watered["fat_g"]) == (plain["protein_g"], plain["carbs_g"], plain["fat_g"])
+    assert looked_up == ["egg", "egg"]  # water was never looked up

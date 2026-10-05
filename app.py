@@ -68,11 +68,19 @@ they wrote the dish in English, use only the English name.
   For more than one item, that line is the total.
   The word "Estimated:" stays in English in every language; the rest of the reply follows the \
 user's language.
-- If you added to an earlier total, the second line says so: "Added to your earlier LOW–HIGH kcal."
+- Only when the user asked you to add to an earlier total (see CONVERSATION): the first line is \
+the new combined total, and the second line is 'Added to your earlier LOW–HIGH kcal.' In every \
+other reply, leave that line out.
 - Then one line per item: its calories with its own protein, carbs, and fat. If that item's \
 tool result has `note_for_user`, put that sentence at the end of THAT item's line. Never put it \
 at the end of the reply, where it would seem to cover every item.
+- Protein, carbs and fat are single numbers for the typical portion. Copy them from the tool \
+result as they are. Never turn them into a range.
 - Last, one sentence naming the biggest uncertainty (portion size or cooking oil). Keep it short.
+- Example layout for a normal estimate, with nothing added:
+  Estimated: 380–762 kcal (typical 571)
+  - Grilled salmon salad: 380–762 kcal (31 g protein, 4 g carbs, 49 g fat). This is a lower-confidence estimate, ...
+  Portion size drives most of the uncertainty.
 - Example layout when adding rice to an earlier salad:
   Estimated: 526–1,006 kcal (typical 766)
   Added to your earlier 380–762 kcal.
@@ -85,6 +93,7 @@ about diet, weight loss, or a health condition. Otherwise leave it out.
 - Politely decline requests that have nothing to do with food or nutrition.
 """
 MAX_TOOL_ROUNDS = 8
+EMPTY_REPLY_MESSAGE = "Sorry, I didn't get an answer that time. Please send that again."
 
 # --- The Harness ---
 
@@ -95,6 +104,7 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
     Returns the final text and a record of every tool call made along the way.
     """
     tool_calls = []
+    last_reply_empty = False
 
     for _ in range(MAX_TOOL_ROUNDS):
         reply = litellm.completion(
@@ -103,6 +113,12 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
             messages=messages,
             tools=TOOLS,
         ).choices[0].message
+
+        # A reply with no text and no tool calls is not an answer: leave it out of the
+        # context and ask again. It still uses up a round.
+        last_reply_empty = not reply.tool_calls and not (reply.content or "").strip()
+        if last_reply_empty:
+            continue
 
         # Append assistant's reply (text, tool calls, or both) to the context.
         # model_dump() keeps it a plain dict: the raw object carries provider-specific
@@ -134,6 +150,8 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
 
             messages += [{"role": "tool", "tool_call_id": call.id, "content": result}]
 
+    if last_reply_empty:
+        return EMPTY_REPLY_MESSAGE, tool_calls
     return "Sorry, I hit my tool-call limit before finishing.", tool_calls
 
 
@@ -178,6 +196,10 @@ def chat(request: ChatRequest):
     except Exception as e:
         # Auth, billing, a model that is not running: show it in the chat, not as a 500.
         response, tool_calls = f"Model call failed: {type(e).__name__}: {str(e)[:300]}", []
+
+    # ChatResponse needs a string; anything else would turn into a 500 the page cannot read.
+    if not isinstance(response, str) or not response.strip():
+        response = EMPTY_REPLY_MESSAGE
 
     return ChatResponse(response=response, session_id=session_id, tool_calls=tool_calls)
 
