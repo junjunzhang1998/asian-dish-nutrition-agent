@@ -58,15 +58,43 @@ def test_run_agent_answers_a_tool_call_whose_arguments_are_not_json(monkeypatch)
     assert any(m["role"] == "tool" and m["tool_call_id"] == "1" for m in messages)
 
 
-def test_run_agent_asks_again_after_an_empty_reply(monkeypatch):
-    replies = [
+def fake_model(monkeypatch, replies):
+    """Replace the model with scripted replies. Returns the list of messages each call was sent."""
+    sent = []
+
+    def completion(**kwargs):
+        sent.append(list(kwargs["messages"]))
+        return SimpleNamespace(choices=[SimpleNamespace(message=replies.pop(0), finish_reason="stop")])
+
+    monkeypatch.setattr(app.litellm, "completion", completion)
+    return sent
+
+
+def test_run_agent_asks_again_after_an_empty_reply(monkeypatch, capsys):
+    sent = fake_model(monkeypatch, [
         FakeReply(content=None),  # no text and no tool calls
         FakeReply(content="Estimated: ..."),
-    ]
-    monkeypatch.setattr(app.litellm, "completion", lambda **kwargs: SimpleNamespace(choices=[SimpleNamespace(message=replies.pop(0))]))
+    ])
     messages = [{"role": "user", "content": "half a bowl of congee"}]
 
     response, tool_calls = app.run_agent(messages)
 
     assert response == "Estimated: ..."
+    assert "finish_reason: stop" in capsys.readouterr().out
+    assert app.EMPTY_REPLY_NUDGE not in sent[0]
+    assert sent[1][-1] == app.EMPTY_REPLY_NUDGE  # the retry is told its last reply was empty
+    assert app.EMPTY_REPLY_NUDGE not in messages  # but the session never keeps it
     assert not any(m["role"] == "assistant" and not (m["content"] or "").strip() for m in messages)
+
+
+def test_run_agent_gives_up_after_three_empty_replies(monkeypatch):
+    sent = fake_model(monkeypatch, [
+        FakeReply(content=None), FakeReply(content=""), FakeReply(content="  "), FakeReply(content="never asked for"),
+    ])
+    messages = [{"role": "user", "content": "half a bowl of congee"}]
+
+    response, tool_calls = app.run_agent(messages)
+
+    assert response == app.EMPTY_REPLY_MESSAGE
+    assert len(sent) == 3
+    assert app.EMPTY_REPLY_NUDGE not in messages

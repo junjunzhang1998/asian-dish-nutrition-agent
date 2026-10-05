@@ -1,5 +1,5 @@
 {
-  "_about": "Per-100g values for the pinned ingredients in data/foods.json, fetched from USDA FoodData Central on 2026-10-03 by scripts/build_snapshot.py. Fallback only; the tool calls USDA first.",
+  "_about": "Per-100g values for the pinned ingredients in data/foods.json, fetched from USDA FoodData Central on 2026-10-04 by scripts/build_snapshot.py. Fallback only; the tool calls USDA first.",
   "foods": {
     "cooked white rice": {
       "fdc_id": 168878,
@@ -21,6 +21,28 @@
         "protein_g": 5.8,
         "carbs_g": 30.9,
         "fat_g": 0.9
+      }
+    },
+    "glass noodles": {
+      "fdc_id": 2708355,
+      "description": "Long rice noodles, made from mung beans, cooked",
+      "data_type": "Survey (FNDDS)",
+      "per_100g": {
+        "calories_kcal": 84,
+        "protein_g": 0.0,
+        "carbs_g": 20.7,
+        "fat_g": 0.0
+      }
+    },
+    "korean rice cake": {
+      "fdc_id": 2167323,
+      "description": "KOREAN RICE CAKE, KOREAN RICE",
+      "data_type": "Branded",
+      "per_100g": {
+        "calories_kcal": 237,
+        "protein_g": 5.0,
+        "carbs_g": 52.0,
+        "fat_g": 1.0
       }
     },
     "wheat flour": {
@@ -450,6 +472,17 @@
         "protein_g": 24.4,
         "carbs_g": 0.0,
         "fat_g": 0.5
+      }
+    },
+    "fish cake": {
+      "fdc_id": 1924084,
+      "description": "RED KAMABOKO STEAMED FISHCAKE",
+      "data_type": "Branded",
+      "per_100g": {
+        "calories_kcal": 123,
+        "protein_g": 14.0,
+        "carbs_g": 15.8,
+        "fat_g": 0.0
       }
     }
   }

@@ -1,6 +1,5 @@
 {
-  "_about": "Everyday portions -> grams, used by estimate_portion_size. A rule is one category + one unit, with a low / typical / high weight in grams for ONE regular-sized unit of the food as served (cooked). A food gets its category from its dish entry in foods.json, or from the generic 'names' here (words that are not a built-in dish, like 'soup' or 'udon'). A food name matches a name if it equals it or contains it as whole words, and the longest match wins ('kimchi fried rice' -> fried rice, not plain rice). A rule's optional 'note' is added to the tool's assumption text. Any number that is my own estimate has source 'assumption - needs verification'.",
-  "size_multipliers": {"small": 0.75, "regular": 1.0, "large": 1.3, "source": "assumption - needs verification"},
+  "_about": "Everyday portions -> grams, used by estimate_portion_size. A rule is one category + one unit, with a low / typical / high weight in grams for ONE regular-sized unit of the food as served (cooked). A food gets its category from its dish entry in foods.json, or from the generic 'names' here (words that are not a built-in dish, like 'soup' or 'udon'). A food name matches a name if it equals it or contains it as whole words, and the longest match wins ('kimchi fried rice' -> fried rice, not plain rice). A category with 'exact': true matches only a food name that equals one of its names, never one inside a longer name ('egg noodles' is not an egg). A rule's optional 'note' is added to the tool's assumption text. Any number that is my own estimate has source 'assumption - needs verification'.",
   "generic_category_by_unit": {"piece": "generic piece", "bowl": "soup", "plate": "stir-fry dish", "cup": "soup"},
   "categories": {
     "dumpling": {
@@ -83,7 +82,7 @@
       }
     },
     "vegetable dish": {
-      "names": ["vegetables"],
+      "names": ["vegetables", "bok choy", "pak choi", "choy sum", "gai lan", "chinese broccoli", "water spinach", "spinach", "pea shoots", "a-choy", "napa cabbage", "白菜", "小白菜", "菜心", "芥兰", "空心菜", "菠菜", "豆苗", "油麦菜"],
       "units": {
         "plate": {"grams_low": 150, "grams_typical": 220, "grams_high": 300, "source": "assumption - needs verification"}
       }
@@ -99,6 +98,38 @@
       "names": ["sushi", "nigiri", "maki", "sushi roll", "california roll", "寿司", "握り寿司"],
       "units": {
         "piece": {"grams_low": 25, "grams_typical": 35, "grams_high": 45, "source": "assumption - needs verification", "note": "A piece is one nigiri or one cut roll piece."}
+      }
+    },
+    "takoyaki": {
+      "names": ["takoyaki", "octopus balls", "たこ焼き", "章鱼小丸子"],
+      "units": {
+        "piece": {"grams_low": 25, "grams_typical": 30, "grams_high": 40, "source": "assumption - needs verification"}
+      }
+    },
+    "salad": {
+      "names": ["salad"],
+      "units": {
+        "bowl": {"grams_low": 100, "grams_typical": 150, "grams_high": 250, "source": "assumption - needs verification"},
+        "plate": {"grams_low": 150, "grams_typical": 200, "grams_high": 300, "source": "assumption - needs verification"}
+      }
+    },
+    "bubble tea": {
+      "names": ["bubble tea", "boba", "boba tea", "milk tea", "奶茶", "珍珠奶茶"],
+      "units": {
+        "cup": {"grams_low": 350, "grams_typical": 500, "grams_high": 700, "source": "assumption - needs verification"}
+      }
+    },
+    "fried roll": {
+      "names": ["egg roll", "egg rolls", "spring roll", "spring rolls", "春卷"],
+      "units": {
+        "piece": {"grams_low": 40, "grams_typical": 65, "grams_high": 90, "source": "assumption - needs verification"}
+      }
+    },
+    "egg": {
+      "names": ["egg", "eggs", "fried egg", "fried eggs", "boiled egg", "boiled eggs", "scrambled egg", "poached egg", "tea egg", "鸡蛋", "煎蛋", "茶叶蛋", "荷包蛋"],
+      "exact": true,
+      "units": {
+        "piece": {"grams_low": 44, "grams_typical": 50, "grams_high": 60, "source": "assumption - needs verification"}
       }
     },
     "generic piece": {

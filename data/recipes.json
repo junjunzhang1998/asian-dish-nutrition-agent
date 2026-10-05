@@ -187,6 +187,22 @@
       "oil": {"name": "cooking oil", "grams_low": 15, "grams_high": 40},
       "assumptions": ["Weights are the edible part, without bone.", "Double-fried with a flour and starch coating and a light sweet-spicy glaze.", "Oil is the frying oil absorbed by the chicken."],
       "source": "assumption - needs verification"
+    },
+    "tteokbokki": {
+      "reference_serving": {"grams": 300, "unit": "plate"},
+      "ingredients": [
+        {"name": "korean rice cake", "grams": 130},
+        {"name": "fish cake", "grams": 40},
+        {"name": "gochujang", "grams": 25},
+        {"name": "sugar", "grams": 10},
+        {"name": "soy sauce", "grams": 8},
+        {"name": "onion", "grams": 20},
+        {"name": "scallion", "grams": 10},
+        {"name": "garlic", "grams": 5}
+      ],
+      "oil": {"name": "cooking oil", "grams_low": 2, "grams_high": 8},
+      "assumptions": ["Rice cakes and fish cake in a gochujang sauce. About 50 g of each plate is sauce water, which has no calories and is left out of the ingredients."],
+      "source": "assumption - needs verification"
     }
   }
 }

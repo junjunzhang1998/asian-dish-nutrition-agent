@@ -25,6 +25,28 @@
       "fdc_id": 169737,
       "note": "USDA has no plain Chinese wheat noodle; plain pasta (wheat, no egg) is the closest generic entry."
     },
+    "glass noodles": {
+      "aliases": [
+        "cellophane noodles",
+        "sweet potato noodles",
+        "dangmyeon",
+        "粉丝",
+        "당면"
+      ],
+      "usda_query": "bean thread noodles",
+      "fdc_id": 2708355,
+      "note": "Cooked weight. USDA's only cooked glass noodle is mung bean (Survey FNDDS); it is also used for sweet potato noodles (dangmyeon), whose branded labels give nearly the same values (82 kcal)."
+    },
+    "korean rice cake": {
+      "aliases": [
+        "rice cake",
+        "rice cakes",
+        "tteok"
+      ],
+      "usda_query": "korean rice cake",
+      "fdc_id": 2167323,
+      "note": "No generic USDA entry for tteok; the generic 'Rice cake' entries are puffed rice crackers (about 390 kcal). Pinned a Branded product (KOREAN RICE CAKE, 237 kcal)."
+    },
     "wheat flour": {
       "aliases": [
         "flour",
@@ -416,6 +438,22 @@
       ],
       "usda_query": "fish tuna fresh yellowfin raw",
       "fdc_id": 175159
+    },
+    "fish cake": {
+      "aliases": [
+        "fish cakes",
+        "fishcake",
+        "kamaboko",
+        "chikuwa",
+        "narutomaki",
+        "eomuk",
+        "odeng",
+        "鱼饼",
+        "어묵"
+      ],
+      "usda_query": "kamaboko",
+      "fdc_id": 1924084,
+      "note": "Branded steamed kamaboko, 123 kcal. No generic USDA entry for Asian fish cake. Fried eomuk runs slightly higher, about 140 kcal."
     }
   },
   "dishes": {
@@ -495,26 +533,8 @@
       "aliases": [
         "greens",
         "stir-fried bok choy",
-        "bok choy",
-        "pak choi",
-        "choy sum",
-        "gai lan",
-        "chinese broccoli",
-        "water spinach",
-        "spinach",
-        "pea shoots",
-        "a-choy",
-        "napa cabbage",
         "炒青菜",
-        "青菜",
-        "白菜",
-        "小白菜",
-        "菜心",
-        "芥兰",
-        "空心菜",
-        "菠菜",
-        "豆苗",
-        "油麦菜"
+        "青菜"
       ],
       "portion_category": "vegetable dish"
     },
@@ -587,6 +607,14 @@
         "치킨"
       ],
       "portion_category": "fried chicken piece"
+    },
+    "tteokbokki": {
+      "aliases": [
+        "spicy rice cakes",
+        "topokki",
+        "떡볶이"
+      ],
+      "portion_category": "stir-fry dish"
     }
   }
 }

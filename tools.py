@@ -1,5 +1,11 @@
 """The tools the harness can run, and the JSON that describes them to the model."""
 
+# The three tools the model can call:
+# - lookup_food_nutrition: calories and macros per 100 g for one food, from USDA.
+# - estimate_portion_size: an everyday portion ('3 dumplings') -> a low/typical/high gram range.
+# - estimate_dish_nutrition: calories and macros for a portion of a dish, from its ingredients.
+# Every other function in this file is a helper for these three.
+
 import json
 import re
 from pathlib import Path
@@ -29,14 +35,38 @@ def normalize_food_name(food_name: str) -> str:
     return ALIASES.get(name, name)
 
 
+# Small connecting words a USDA description may leave out ('chicken and rice' -> 'Chicken, rice').
+CONNECTING_WORDS = {"with", "and", "or", "of", "in", "a", "an", "the"}
+
+
+def content_words(text: str) -> set[str]:
+    """The words of a name, lowercased and singular, without connecting words.
+
+    'Tomatoes with Eggs' -> {'tomato', 'egg'}. Only plural 's', '-oes' and '-ies' are undone.
+    """
+    words = set()
+    for word in re.findall(r"[^\W_]+", text.lower()):
+        if word.endswith("oes"):
+            word = word[:-2]  # tomatoes -> tomato
+        elif word.endswith("ies"):
+            word = word[:-3] + "y"  # anchovies -> anchovy
+        elif word.endswith("s") and len(word) > 3:
+            word = word[:-1]  # mushrooms -> mushroom; 'gas' stays
+        words.add(word)
+    return words - CONNECTING_WORDS
+
+
 def search_best_match(name: str) -> dict | None:
     """Search USDA for an unpinned food and pick the best usable result, or None.
 
-    SR Legacy and Foundation are plain ingredients, so they are searched first. Survey (FNDDS)
-    also contains mixed dishes ('Lomi salmon'), so it is used only if the first search finds
-    nothing. Each result gets a point if its description starts with the name and a point if it
-    says "raw"; the most points wins, and ties keep USDA's order.
+    A result counts only if its description has every word of the name, so 'fish cake' never
+    becomes 'Fish, bluefish, raw'. SR Legacy and Foundation are plain ingredients, so they are
+    searched first. Survey (FNDDS) also contains mixed dishes ('Lomi salmon'), so it is used only
+    if the first search finds nothing that counts. Each result gets a point if its description
+    starts with the name and a point if it says "raw"; the most points wins, and ties keep
+    USDA's order.
     """
+    wanted = content_words(name)
 
     def points(food: dict) -> int:
         description = food["description"].lower()
@@ -45,10 +75,20 @@ def search_best_match(name: str) -> dict | None:
         return starts_with_name + says_raw  # True counts as 1
 
     for data_types in (["SR Legacy", "Foundation"], ["Survey (FNDDS)"]):
-        matches = [f for f in search_foods(name, data_types=data_types, page_size=10) if f["per_100g"] is not None]
+        matches = [
+            f for f in search_foods(name, data_types=data_types, page_size=10)
+            if f["per_100g"] is not None and wanted <= content_words(f["description"])
+        ]
         if matches:
             return max(matches, key=points)  # max() returns the first of equally good results
     return None
+
+
+NO_MATCH_HINT = (
+    "Use a plainer English name for one single ingredient (e.g. 'shiitake mushrooms', not a brand "
+    "or dish name). If it is an item in an `ingredients` list and its amount is small, drop it "
+    "instead. Then call again. These names always work: " + ", ".join(FOODS) + "."
+)
 
 
 def get_food_nutrition(food_name: str) -> dict:
@@ -69,11 +109,7 @@ def get_food_nutrition(food_name: str) -> dict:
         else:
             food = search_best_match(name)
             if food is None:
-                raise USDAError(
-                    f"No USDA match for '{food_name}'.",
-                    "Try a more generic English name for a single ingredient, e.g. 'pork, ground' "
-                    "instead of a brand or dish name. For a composed dish, use estimate_dish_nutrition.",
-                )
+                raise USDAError(f"No USDA match for '{food_name}'.", NO_MATCH_HINT)
             match_quality = "close"
     except USDAError as e:
         if not (e.unavailable and name in SNAPSHOT):
@@ -119,7 +155,7 @@ def lookup_food_nutrition(food_name: str) -> str:
 
 PORTION_RULES = json.loads((DATA_DIR / "portion_rules.json").read_text(encoding="utf-8"))
 UNITS = ["piece", "bowl", "plate", "cup"]
-SIZES = ["small", "regular", "large"]
+SIZES = ["small", "medium", "large"]
 MAX_QUANTITY = 50  # more units than anyone eats; a bigger number is probably grams
 
 
@@ -138,21 +174,28 @@ for dish, entry in DISHES.items():
     for name in [dish] + entry["aliases"]:
         PORTION_NAMES[name.lower()] = entry["portion_category"]
 
+# Names of categories marked "exact": they match only the whole food name ('egg', not 'egg noodles').
+EXACT_PORTION_NAMES = {
+    name for rules in PORTION_RULES["categories"].values() if rules.get("exact") for name in rules["names"]
+}
+
 
 def find_portion_category(food: str) -> str | None:
     """Return the portion category a food belongs to, or None if no name matches.
 
-    A name matches if the food equals it or contains it as whole words. The longest
-    match wins, so 'kimchi fried rice' is fried rice, not plain rice.
+    A name matches if the food equals it or contains it as whole words; a name of an "exact"
+    category matches only if the food equals it. The longest match wins, so 'kimchi fried
+    rice' is fried rice, not plain rice.
     """
     best_category, best_name = None, ""
     for name, category in PORTION_NAMES.items():
-        if f" {name} " in f" {food} " and len(name) > len(best_name):
+        matches = food == name if name in EXACT_PORTION_NAMES else f" {name} " in f" {food} "
+        if matches and len(name) > len(best_name):
             best_category, best_name = category, name
     return best_category
 
 
-def estimate_portion_size(food_name: str, quantity: float, unit: str, size: str = "regular") -> str:
+def estimate_portion_size(food_name: str, quantity: float, unit: str, size: str | None = None) -> str:
     """Tool: turn an everyday portion ('3 dumplings', 'half a bowl of ramen') into a gram range."""
     if not isinstance(food_name, str) or not food_name.strip():
         return error_json("food_name is empty.", "Pass the English name of the food, e.g. 'xiaolongbao' or 'ramen'.")
@@ -170,8 +213,11 @@ def estimate_portion_size(food_name: str, quantity: float, unit: str, size: str 
         )
     if unit not in UNITS:
         return error_json(f"'{unit}' is not a valid unit.", f"unit must be one of {UNITS}.")
-    if size not in SIZES:
-        return error_json(f"'{size}' is not a valid size.", f"size must be one of {SIZES}, or leave it out for 'regular'.")
+    if size is not None and size not in SIZES:
+        return error_json(
+            f"'{size}' is not a valid size.",
+            f"size must be one of {SIZES}, or leave it out when the user has not said how big the portion was.",
+        )
 
     food = " ".join(food_name.lower().split())
     category = find_portion_category(food)
@@ -188,17 +234,27 @@ def estimate_portion_size(food_name: str, quantity: float, unit: str, size: str 
         )
 
     rule = units[unit]
-    multiplier = PORTION_RULES["size_multipliers"][size]
-    low_each = rule["grams_low"] * multiplier
-    typical_each = rule["grams_typical"] * multiplier
-    high_each = rule["grams_high"] * multiplier
+    low_each, typical_each, high_each = rule["grams_low"], rule["grams_typical"], rule["grams_high"]
+    # A size keeps about half of the rule's range for one unit: small = low to typical,
+    # medium = the middle half, large = typical to high. Typical is the middle of what is kept.
+    if size == "small":
+        high_each = typical_each
+    elif size == "medium":
+        low_each, high_each = (low_each + typical_each) / 2, (typical_each + high_each) / 2
+    elif size == "large":
+        low_each = typical_each
+    if size is not None:
+        typical_each = (low_each + high_each) / 2
 
     # Build the sentence that explains the estimate, e.g. "3 pieces at 20-30 g each."
-    size_word = "" if size == "regular" else f"{size} "
+    size_word = "" if size is None else f"{size} "
     plural = "s" if quantity > 1 else ""
     assumption = f"{quantity:g} {size_word}{unit}{plural} at {round(low_each)}-{round(high_each)} g each."
-    if size != "regular":
-        assumption += f" A {size} {unit} is taken as {multiplier} x a regular one."
+    if size is not None:
+        assumption += (
+            f" Size '{size}' applies to each {unit}: {round(low_each)}-{round(high_each)} g of the usual "
+            f"{rule['grams_low']}-{rule['grams_high']} g for one {unit}."
+        )
     if not known_food:
         assumption += f" No portion rule for '{food}', so the generic rule for a {unit} ({category}) was used."
     if "note" in rule:
@@ -243,12 +299,6 @@ def is_water(name: str) -> bool:
 def is_flour_or_starch(name: str) -> bool:
     name = name.lower()
     return "flour" in name or "starch" in name
-
-
-NO_INGREDIENT_HINT = (
-    "Replace it with a closer generic ingredient (e.g. 'chili bean paste' or 'soy sauce') "
-    "or drop it if the amount is small, then call again."
-)
 
 
 def is_number(value) -> bool:
@@ -356,14 +406,44 @@ def check_dry_flour(items: list) -> str | None:
     )
 
 
-def ingredient_lines(items: list, oil_level: str) -> list:
-    """Turn the model's ingredient list into lines. Only the fats are narrowed by oil_level."""
-    lines = []
+def scale_items(items: list, grams_low: float, grams_high: float) -> list:
+    """Scale an ingredient list to the portion eaten.
+
+    Every low is multiplied by grams_low / (sum of lows), every high by grams_high / (sum of
+    highs), so the lows add up to grams_low and the highs to grams_high. The two factors differ,
+    so an item with a narrow range can come out with its low above its high; that item is set
+    to the middle of the two, as an exact amount.
+    """
+    total_low = sum(item["grams_low"] for item in items)
+    total_high = sum(item["grams_high"] for item in items)
+    scale_low = grams_low / total_low if total_low > 0 else 0.0  # all lows 0: they stay 0
+    scale_high = grams_high / total_high if total_high > 0 else 0.0
+    scaled = []
+    for item in items:
+        low, high = item["grams_low"] * scale_low, item["grams_high"] * scale_high
+        if low > high:
+            low = high = (low + high) / 2
+        scaled.append(dict(item, grams_low=low, grams_high=high))
+    return scaled
+
+
+def ingredient_lines(items: list, oil_level: str) -> tuple[list, list]:
+    """Turn the model's ingredient list into lines. Only the fats are narrowed by oil_level.
+
+    Returns (lines, assumptions), with one assumption for each fat that oil_level narrowed.
+    """
+    lines, assumptions = [], []
     for item in items:
         low, high = item["grams_low"], item["grams_high"]
         is_oil = normalize_food_name(item["name"]) in OIL_INGREDIENTS
         if is_oil:
             low, high = narrow_oil(low, high, oil_level)
+            if oil_level != "unknown":
+                assumptions.append(
+                    f"Oil narrowed for oil_level {oil_level}: {item['name']} "
+                    f"{round(item['grams_low'], 1):g}-{round(item['grams_high'], 1):g} g -> "
+                    f"{round(low, 1):g}-{round(high, 1):g} g."
+                )
         lines.append({
             "name": item["name"],
             "low": low,
@@ -371,7 +451,7 @@ def ingredient_lines(items: list, oil_level: str) -> list:
             "high": high,
             "oil_spread": high - low if is_oil else 0.0,
         })
-    return lines
+    return lines, assumptions
 
 
 def add_up(lines: list) -> tuple[dict, list, list, list]:
@@ -390,7 +470,7 @@ def add_up(lines: list) -> tuple[dict, list, list, list]:
         except USDAError as e:
             if e.unavailable:
                 raise
-            raise USDAError(f"Could not find nutrition data for ingredient '{line['name']}'.", NO_INGREDIENT_HINT)
+            raise USDAError(f"Could not find nutrition data for ingredient '{line['name']}'.", NO_MATCH_HINT)
 
         per_gram = {key: value / 100 for key, value in food["per_100g"].items()}
         for key in ("low", "typical", "high", "oil_spread"):
@@ -438,26 +518,25 @@ def estimate_dish_nutrition(
         items, error = parse_ingredients(ingredients)
         if error:
             return error
+        # Order: the flour check sees the list as given, then the list is scaled to the
+        # portion, then oil_level narrows the scaled fats.
         error = check_dry_flour(items)
         if error:
             return error
-        lines = ingredient_lines(items, oil_level)
-        confidence = "ingredient_estimate"
-        assumptions = ["Calculated from the ingredient list given, not a built-in recipe."]
-
-        # The calories come from the ingredients, so the weight reported is their sum too.
         total_low = sum(item["grams_low"] for item in items)
         total_high = sum(item["grams_high"] for item in items)
         if grams_low is not None:
-            passed_mid = (grams_low + grams_high) / 2
-            total_mid = (total_low + total_high) / 2
-            if total_mid > 0 and abs(passed_mid - total_mid) / total_mid > 0.25:
-                assumptions.append(
-                    f"The portion passed in ({grams_low:g}-{grams_high:g} g) differs from the ingredient total "
-                    f"({total_low:g}-{total_high:g} g) by more than 25%; the calories follow the ingredients."
-                )
-        grams_low, grams_high = total_low, total_high
-        assumptions.append("Portion weight is the sum of the listed ingredients.")
+            items = scale_items(items, grams_low, grams_high)
+            portion_note = (
+                f"The ingredient list ({total_low:g}-{total_high:g} g) was scaled to the "
+                f"{grams_low:g}-{grams_high:g} g portion passed in."
+            )
+        else:
+            grams_low, grams_high = total_low, total_high
+            portion_note = "Portion weight is the sum of the listed ingredients."
+        lines, oil_notes = ingredient_lines(items, oil_level)
+        confidence = "ingredient_estimate"
+        assumptions = ["Calculated from the ingredient list given, not a built-in recipe.", portion_note] + oil_notes
 
     # 2. A built-in recipe: scale it to the portion eaten.
     elif dish in DISH_ALIASES:
@@ -480,16 +559,18 @@ def estimate_dish_nutrition(
                 "or pass the user's exact weight as both.",
             )
         dish = normalize_food_name(dish)
-        lines = ingredient_lines([{"name": dish, "grams_low": grams_low, "grams_high": grams_high}], oil_level)
+        lines, oil_notes = ingredient_lines([{"name": dish, "grams_low": grams_low, "grams_high": grams_high}], oil_level)
         confidence = "ingredient_estimate"
-        assumptions = [f"A single ingredient: USDA values for {dish}, applied to the {grams_low:g}-{grams_high:g} g eaten."]
+        assumptions = [f"A single ingredient: USDA values for {dish}, applied to the {grams_low:g}-{grams_high:g} g eaten."] + oil_notes
 
     # 4. None of these: ask the model for an ingredient list.
     else:
         return error_json(
             f"No built-in recipe for '{dish_name}'.",
             "Call again with an `ingredients` list: your best estimate of each ingredient and its gram "
-            "range for the portion eaten, including cooking oil. Built-in recipes: " + ", ".join(RECIPES) + ".",
+            "range for the portion eaten, including cooking oil, and pass the same grams_low and "
+            "grams_high again; the tool scales the list to that portion. Built-in recipes: "
+            + ", ".join(RECIPES) + ".",
         )
 
     try:
@@ -538,7 +619,9 @@ TOOLS = [
                 "ingredient (e.g. 'tofu', 'cooked white rice', 'egg') from USDA FoodData Central. "
                 "Use this for per-100g questions and comparisons between ingredients; call it once "
                 "per food. Do NOT use it for a composed dish like ramen or bibimbap; use "
-                "estimate_dish_nutrition for those. Values are per 100 g, not per serving. "
+                "estimate_dish_nutrition for those. Do NOT use it alone for a count or portion of "
+                "a single food ('1 fried egg', 'a bowl of rice'); use estimate_portion_size, then "
+                "estimate_dish_nutrition. Values are per 100 g, not per serving. "
                 "match_quality is 'exact' (a hand-picked USDA entry), 'close' (best search match, "
                 "check matched_description), or 'branded' (a commercial product label)."
             ),
@@ -578,7 +661,8 @@ TOOLS = [
                         "description": (
                             "Canonical English dish or food name, e.g. 'xiaolongbao', 'ramen', "
                             "'congee', 'Korean fried chicken'. Translate non-English names to "
-                            "English first (粥 -> 'congee')."
+                            "English first (粥 -> 'congee'). Use the dish the user named; never "
+                            "replace a dish with its main ingredient ('tteokbokki', not 'korean rice cake')."
                         ),
                     },
                     "quantity": {
@@ -596,17 +680,20 @@ TOOLS = [
                             "'piece' (个: one dumpling, one bao, one wing or drumstick), "
                             "'bowl' (碗: soups, noodle soups, stews, congee, rice), "
                             "'plate' (盘 / 份: one restaurant serving of a dish), "
-                            "'cup' (杯: soup or rice)."
+                            "'cup' (杯: soup or rice). If the user's unit is none of these (a scoop, "
+                            "a slice, a spoonful, a can), do not force it into one: ask for a rough "
+                            "weight in grams or the closest of these units."
                         ),
                     },
                     "size": {
                         "type": "string",
                         "enum": SIZES,
                         "description": (
-                            "'small' (小), 'regular', or 'large' (大). Leave it out unless the user "
-                            "says the portion was small or large; the default is 'regular'. Example: "
-                            "'a small bowl' -> quantity 1, size 'small' (the size already makes it "
-                            "smaller, so do not also lower the quantity)."
+                            "'small' (小), 'medium' (中), or 'large' (大): narrows the gram range to "
+                            "that part of it (for pieces, the size of each piece). Leave it out unless "
+                            "the user said how big the portion was, in their message or in answer to "
+                            "your size question. Example: 'a small bowl' -> quantity 1, size 'small' "
+                            "(the size already makes it smaller, so do not also lower the quantity)."
                         ),
                     },
                 },
@@ -623,12 +710,15 @@ TOOLS = [
                 "by calculating from its ingredients. Returns a low-to-high calorie range and says "
                 "whether portion size or cooking oil drives the uncertainty. Has built-in recipes for "
                 "common dishes: " + ", ".join(RECIPES) + ". For a built-in dish, pass grams_low and "
-                "grams_high (from estimate_portion_size, or the user's exact weight). A plain single "
+                "grams_high (from estimate_portion_size, or the user's exact weight). The portion "
+                "weight must come from estimate_portion_size or from a weight the user gave, never "
+                "from a guess. A plain single "
                 "food ('rice', 'egg') works the same way: pass it as dish_name with its grams. For any "
                 "other dish, or when the user tells you what went into it, pass an `ingredients` list. "
                 "If the result has `note_for_user`, include that sentence in your reply. "
-                "Use this for dishes and portions; use lookup_food_nutrition only for per-100g "
-                "questions about a single ingredient."
+                "Use this for dishes and portions, including a count of a single food ('1 fried "
+                "egg'); use lookup_food_nutrition only for per-100g questions and comparisons "
+                "between foods."
             ),
             "parameters": {
                 "type": "object",
@@ -637,7 +727,11 @@ TOOLS = [
                         "type": "string",
                         "description": (
                             "Canonical English dish name, e.g. 'tomato scrambled eggs', 'xiaolongbao', "
-                            "'japchae'. Translate non-English names first (番茄炒蛋 -> 'tomato scrambled eggs')."
+                            "'japchae'. Translate non-English names first (番茄炒蛋 -> 'tomato scrambled eggs'). "
+                            "A vegetable eaten as a cooked side dish ('a plate of bok choy' at a meal) "
+                            "is 'stir-fried greens'; a raw or plain vegetable uses the vegetable's own "
+                            "name, e.g. 'spinach'. Use the dish the user named; never replace a dish "
+                            "with its main ingredient ('tteokbokki', not 'korean rice cake')."
                         ),
                     },
                     "grams_low": {
@@ -645,7 +739,8 @@ TOOLS = [
                         "description": (
                             "Low estimate of the portion eaten, in grams, e.g. 200. From "
                             "estimate_portion_size, or the user's exact weight. Required when no "
-                            "`ingredients` are given."
+                            "`ingredients` are given. With `ingredients`, the list is scaled to "
+                            "this portion; without grams, the list's own total is the portion."
                         ),
                     },
                     "grams_high": {
@@ -667,7 +762,7 @@ TOOLS = [
                             "[{'name': 'egg', 'grams_low': 50, 'grams_high': 100}, {'name': 'cooking oil', "
                             "'grams_low': 5, 'grams_high': 15}]. Prefer these names, which have exact USDA "
                             "data: " + ", ".join(FOODS) + ". Any other name is searched in USDA and may "
-                            "match loosely, so use a plain single-ingredient name like 'glass noodles' "
+                            "match loosely, so use a plain single-ingredient name like 'rice noodles' "
                             "or 'shiitake mushrooms'."
                         ),
                         "items": {
@@ -685,7 +780,10 @@ TOOLS = [
                         "enum": OIL_LEVELS,
                         "description": (
                             "How oily the dish was: 'light', 'normal', 'heavy', or 'unknown' (default). "
-                            "Set it only when the user says how oily it was, e.g. 'pretty oily' -> 'heavy'."
+                            "Set it only when the user says how oily it was, e.g. 'pretty oily' -> 'heavy'. "
+                            "The tool narrows the oil itself: for a dish with an `ingredients` list, resend "
+                            "the earlier list exactly, every number unchanged, and add oil_level. Changing "
+                            "the oil grams as well counts the oil twice."
                         ),
                     },
                 },

@@ -185,9 +185,38 @@ def test_fried_chicken_assumption_says_edible_part():
 
 def test_size_changes_the_weight():
     small = portion("congee", 1, "bowl", size="small")
-    regular = portion("congee", 1, "bowl")
+    medium = portion("congee", 1, "bowl", size="medium")
     large = portion("congee", 1, "bowl", size="large")
-    assert small["grams_typical"] < regular["grams_typical"] < large["grams_typical"]
+    assert small["grams_typical"] < medium["grams_typical"] < large["grams_typical"]
+
+
+def test_size_narrows_a_plate_to_part_of_the_range():
+    rule = rule_for("stir-fry dish", "plate")
+    low, typical, high = rule["grams_low"], rule["grams_typical"], rule["grams_high"]
+    expected = {
+        "small": (low, typical),
+        "medium": ((low + typical) / 2, (typical + high) / 2),
+        "large": (typical, high),
+    }
+    for size, (size_low, size_high) in expected.items():
+        result = portion("mapo tofu", 1, "plate", size=size)
+        assert (result["grams_low"], result["grams_high"]) == (round(size_low), round(size_high)), size
+        assert result["grams_typical"] == round((size_low + size_high) / 2), size
+
+
+def test_size_applies_to_each_piece():
+    rule = rule_for("dumpling", "piece")
+    result = portion("dumplings", 6, "piece", size="small")
+    assert (result["grams_low"], result["grams_high"]) == (6 * rule["grams_low"], 6 * rule["grams_typical"])
+    assert "applies to each piece" in result["assumption"]
+
+
+def test_no_size_gives_the_whole_range():
+    rule = rule_for("stir-fry dish", "plate")
+    result = portion("mapo tofu", 1, "plate")
+    assert (result["grams_low"], result["grams_typical"], result["grams_high"]) == (
+        rule["grams_low"], rule["grams_typical"], rule["grams_high"])
+    assert "Size" not in result["assumption"]
 
 
 def test_longest_name_wins_and_aliases_work():
@@ -197,6 +226,24 @@ def test_longest_name_wins_and_aliases_work():
     assert tools.find_portion_category("pork dumplings") == "dumpling"
     assert tools.find_portion_category("粥") == "congee"
     assert tools.find_portion_category("japchae") is None
+
+
+def test_egg_names_do_not_take_over_longer_names():
+    assert tools.find_portion_category("egg fried rice") == "fried rice"
+    assert tools.find_portion_category("egg drop soup") == "soup"
+    assert tools.find_portion_category("egg roll") == "fried roll"
+    assert tools.find_portion_category("egg rolls") == "fried roll"
+    assert tools.find_portion_category("eggs") == "egg"
+    for food in ("egg noodles", "steamed egg", "egg custard"):  # egg matches only the whole name
+        assert tools.find_portion_category(food) != "egg", food
+
+
+def test_fried_egg_and_salad_portions():
+    egg = portion("fried egg", 1, "piece")
+    assert (egg["grams_low"], egg["grams_high"]) == (44, 60)
+
+    salad = portion("salad", 1, "bowl")
+    assert (salad["grams_low"], salad["grams_high"]) == (100, 250)
 
 
 def test_unknown_food_uses_generic_rule_and_says_so():
@@ -230,9 +277,11 @@ def test_bad_portion_arguments_return_error_with_hint(args):
     assert result["error"] and result["hint"]
 
 
-def test_bad_size_returns_error_with_hint():
-    result = portion("congee", 1, "bowl", size="huge")
-    assert result["error"] and result["hint"]
+@pytest.mark.parametrize("size", ["huge", "regular"])  # 'regular' is no longer a size
+def test_bad_size_returns_error_with_hint(size):
+    result = portion("congee", 1, "bowl", size=size)
+    assert result["error"] == f"'{size}' is not a valid size."
+    assert "'small', 'medium', 'large'" in result["hint"]
 
 
 # --- The data files agree with each other ---
@@ -349,31 +398,79 @@ def test_ramen_counts_half_the_broth(offline, monkeypatch):
 
 
 def test_close_match_is_listed_in_assumptions(offline, monkeypatch):
-    fake = {"fdc_id": 1, "description": "Noodles, sweet potato, cooked", "data_type": "SR Legacy",
+    fake = {"fdc_id": 1, "description": "Rice noodles, cooked", "data_type": "SR Legacy",
             "per_100g": {"calories_kcal": 100, "protein_g": 0.1, "carbs_g": 25.0, "fat_g": 0.0}}
     monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [fake])
 
-    result = dish("japchae", ingredients=[{"name": "sweet potato noodles", "grams_low": 100, "grams_high": 150}])
+    result = dish("japchae", ingredients=[{"name": "rice noodles", "grams_low": 100, "grams_high": 150}])
 
-    assert "'sweet potato noodles' was matched to USDA 'Noodles, sweet potato, cooked' (close match)." in result["assumptions"]
+    assert "'rice noodles' was matched to USDA 'Rice noodles, cooked' (close match)." in result["assumptions"]
     assert result["grams_low"] == 100  # no portion given: the sum of the ingredients
 
     # The sentence for the model to relay says it is lower confidence and names the loose match.
     assert "lower-confidence" in result["note_for_user"]
-    assert "'sweet potato noodles' as USDA 'Noodles, sweet potato, cooked'" in result["note_for_user"]
+    assert "'rice noodles' as USDA 'Rice noodles, cooked'" in result["note_for_user"]
 
 
-def test_ingredient_weight_is_the_sum_and_mismatch_is_noted(offline):
-    items = [{"name": "cooked white rice", "grams_low": 200, "grams_high": 300},
-             {"name": "chicken breast", "grams_low": 100, "grams_high": 150}]  # total 300-450 g
+# A takoyaki list as a model writes it: 208-335 g in all, more than the 150-240 g portion of 6 pieces.
+TAKOYAKI_LIST = [
+    {"name": "wheat flour", "grams_low": 40, "grams_high": 60},
+    {"name": "water", "grams_low": 90, "grams_high": 140},
+    {"name": "egg", "grams_low": 25, "grams_high": 40},
+    {"name": "shrimp", "grams_low": 30, "grams_high": 50},
+    {"name": "scallion", "grams_low": 5, "grams_high": 10},
+    {"name": "napa cabbage", "grams_low": 10, "grams_high": 20},
+    {"name": "cooking oil", "grams_low": 8, "grams_high": 15},
+]
 
-    close = dish("chicken rice", grams_low=300, grams_high=400, ingredients=items)
-    assert (close["grams_low"], close["grams_high"]) == (300, 450)  # the sum, not what was passed
-    assert not any("differs from the ingredient total" in a for a in close["assumptions"])
 
-    far = dish("chicken rice", grams_low=150, grams_high=250, ingredients=items)  # mid 200 vs 375
-    assert (far["grams_low"], far["grams_high"]) == (300, 450)
-    assert any("differs from the ingredient total" in a for a in far["assumptions"])
+def kcal_of(items, key):
+    return sum(i[key] * tools.SNAPSHOT[i["name"]]["per_100g"]["calories_kcal"] / 100
+               for i in items if i["name"] != "water")
+
+
+def test_list_without_grams_uses_its_own_sum(offline):
+    result = dish("takoyaki", ingredients=TAKOYAKI_LIST)
+    assert (result["grams_low"], result["grams_high"]) == (208, 335)
+    assert "Portion weight is the sum of the listed ingredients." in result["assumptions"]
+    assert result["calories"]["low"] == round(kcal_of(TAKOYAKI_LIST, "grams_low"))
+    assert result["calories"]["high"] == round(kcal_of(TAKOYAKI_LIST, "grams_high"))
+
+
+def test_list_is_scaled_to_the_portion_passed_in(offline):
+    unscaled = dish("takoyaki", ingredients=TAKOYAKI_LIST)
+    scaled = dish("takoyaki", grams_low=150, grams_high=240, ingredients=TAKOYAKI_LIST)
+
+    assert (scaled["grams_low"], scaled["grams_high"]) == (150, 240)
+    assert scaled["calories"]["low"] < unscaled["calories"]["low"]
+    assert scaled["calories"]["high"] < unscaled["calories"]["high"]
+    assert "The ingredient list (208-335 g) was scaled to the 150-240 g portion passed in." in scaled["assumptions"]
+    assert not any("sum of the listed ingredients" in a for a in scaled["assumptions"])
+
+    small = dish("takoyaki", grams_low=150, grams_high=180, ingredients=TAKOYAKI_LIST)
+    assert small["calories"]["high"] < scaled["calories"]["high"]
+
+
+def test_scaled_item_never_ends_up_with_low_above_high(offline):
+    # Scaling 50-52 g + 10-100 g (60-152 g) to 60-70 g: lows x1.0, highs x0.46. The egg's
+    # 50-52 g would become 50-24 g, so it is set to the middle of the two.
+    items = [{"name": "egg", "grams_low": 50, "grams_high": 52},
+             {"name": "cooked white rice", "grams_low": 10, "grams_high": 100}]
+    result = dish("egg rice", grams_low=60, grams_high=70, ingredients=items)
+    assert result["calories"]["low"] <= result["calories"]["typical"] <= result["calories"]["high"]
+
+
+def test_oil_level_narrows_a_list_within_its_own_range(offline):
+    fried_egg = [{"name": "egg", "grams_low": 44, "grams_high": 60},
+                 {"name": "cooking oil", "grams_low": 5, "grams_high": 10}]
+    unknown = dish("fried egg", ingredients=fried_egg)["calories"]
+    for level in ("light", "normal", "heavy"):
+        narrowed = dish("fried egg", ingredients=fried_egg, oil_level=level)["calories"]
+        assert unknown["low"] <= narrowed["low"] <= narrowed["high"] <= unknown["high"], level
+
+    heavy = dish("fried egg", ingredients=fried_egg, oil_level="heavy")
+    assert "Oil narrowed for oil_level heavy: cooking oil 5-10 g -> 8.3-10 g." in heavy["assumptions"]
+    assert not any("Oil narrowed" in a for a in dish("fried egg", ingredients=fried_egg)["assumptions"])
 
 
 def test_template_result_has_no_note_for_user(offline):
@@ -444,6 +541,74 @@ def test_search_uses_fndds_only_when_sr_and_foundation_find_nothing(monkeypatch)
     assert calls == [["SR Legacy", "Foundation"]]
 
 
+@pytest.mark.parametrize(
+    "name, description",
+    [  # real USDA results that were accepted before
+        ("fish cake", "Fish, bluefish, raw"),
+        ("takoyaki sauce", "Sauce, cheese sauce mix, dry"),
+        ("tempura scraps", "Vegetable tempura"),
+    ],
+)
+def test_search_rejects_a_result_missing_a_word_of_the_name(monkeypatch, name, description):
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [fake_food(1, description)])
+    assert tools.search_best_match(name) is None
+
+
+@pytest.mark.parametrize(
+    "name, description",
+    [("takoyaki sauce", "Sauce, cheese sauce mix, dry"), ("tempura scraps", "Vegetable tempura")],
+)
+def test_rejected_search_returns_no_match_error_with_hint(monkeypatch, name, description):
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [fake_food(1, description)])
+    result = json.loads(tools.lookup_food_nutrition(name))
+    assert result["error"] == f"No USDA match for '{name}'."
+    assert "drop it" in result["hint"] and "korean rice cake" in result["hint"]
+
+
+@pytest.mark.parametrize(
+    "name, description",
+    [
+        ("shiitake mushrooms", "Mushrooms, shiitake, raw"),  # plural "s" is ignored
+        ("fried egg", "Egg, whole, cooked, fried"),  # word order does not matter
+        ("tomatoes with garlic", "Tomato, garlic"),  # '-oes' plural and "with" are ignored
+        ("anchovies", "Fish, anchovy, european, raw"),  # '-ies' plural
+    ],
+)
+def test_search_accepts_a_result_with_every_word_of_the_name(monkeypatch, name, description):
+    monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [fake_food(1, description)])
+    assert tools.search_best_match(name)["description"] == description
+
+
+def test_rice_cake_is_the_pinned_korean_rice_cake(offline):
+    for name in ("rice cake", "rice cakes", "tteok"):
+        result = json.loads(tools.lookup_food_nutrition(name))
+        assert result["food_name"] == "korean rice cake"
+        assert result["fdc_id"] == tools.FOODS["korean rice cake"]["fdc_id"]
+
+
+def test_takoyaki_piece_rule():
+    result = portion("takoyaki", 6, "piece")
+    assert (result["grams_low"], result["grams_typical"], result["grams_high"]) == (150, 180, 240)
+    for name in ("octopus balls", "たこ焼き", "章鱼小丸子"):
+        assert tools.find_portion_category(name) == "takoyaki", name
+
+
+def test_tteokbokki_is_a_dish_not_plain_rice_cake(offline):
+    for name in ("tteokbokki", "떡볶이", "spicy rice cakes", "topokki"):
+        result = dish(name, grams_low=300, grams_high=300)
+        assert result["dish_name"] == "tteokbokki", name
+        assert result["confidence"] == "template"
+    assert any("sauce water" in a for a in result["assumptions"])
+    assert 480 <= result["calories"]["low"] <= result["calories"]["typical"] <= result["calories"]["high"] <= 550
+
+
+def test_fish_cake_is_the_pinned_kamaboko(offline):
+    for name in ("fish cake", "fishcake", "kamaboko", "eomuk", "어묵"):
+        result = json.loads(tools.lookup_food_nutrition(name))
+        assert result["food_name"] == "fish cake"
+        assert result["fdc_id"] == tools.FOODS["fish cake"]["fdc_id"]
+
+
 def test_sushi_piece_rule():
     result = portion("salmon nigiri", 6, "piece")
     rule = rule_for("sushi piece", "piece")
@@ -460,7 +625,8 @@ def test_unknown_ingredient_returns_error_with_hint(offline, monkeypatch):
     monkeypatch.setattr(tools, "search_foods", lambda query, **kwargs: [])
     result = dish("mapo tofu", ingredients=[{"name": "doubanjiang", "grams_low": 10, "grams_high": 20}])
     assert result["error"] == "Could not find nutrition data for ingredient 'doubanjiang'."
-    assert "closer generic ingredient" in result["hint"]
+    assert "plainer English name" in result["hint"]
+    assert "cooked white rice" in result["hint"]  # lists the pinned names
 
 
 @pytest.mark.parametrize(
