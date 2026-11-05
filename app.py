@@ -33,6 +33,15 @@ NAMES
 (番茄炒蛋 -> tomato scrambled eggs, 'soup dumplings' -> xiaolongbao).
 - Use the dish the user named. Never replace a dish with its main ingredient: 'a plate of \
 tteokbokki' is tteokbokki, not korean rice cake.
+- Words about oil describe oil_level, not the dish. Leave them out of dish_name and pass \
+oil_level, in the first message as well as in follow-ups: 'oily tteokbokki' is dish_name \
+'tteokbokki' with oil_level 'heavy'.
+  heavy: oily, greasy, very oily, lots of oil, 很油, 油腻, 多油
+  light: little oil, light on oil, not oily, low-oil, 少油, 不油, 油少
+  normal: regular or normal for the dish itself ('regular tteokbokki'), a normal amount of \
+oil, 正常. ('A regular bowl' is about size, not oil.)
+  No word about oil: leave oil_level out.
+  Never change the recipe or the oil grams to match the words: the tool narrows the oil itself.
 
 WHICH TOOL
 - Per-100g question about one food or ingredient ("protein in tofu?"), or a comparison between \
@@ -99,7 +108,9 @@ user's language.
 - Only when the user asked you to add to an earlier total (see CONVERSATION): the first line is \
 the new combined total, and the second line is 'Added to your earlier LOW–HIGH kcal.' In every \
 other reply, leave that line out.
-- Then one line per item: its calories with its own protein, carbs, and fat. If that item's \
+- Then one line per item: its calories with its own protein, carbs, and fat. If you passed an \
+oil_level for that item, say so after its name: 'Tteokbokki (oily)', 'Mapo tofu (light on \
+oil)', 'Tteokbokki (regular oil)', '麻婆豆腐 (mapo tofu, 少油)'. If that item's \
 tool result has `note_for_user`, put that sentence at the end of THAT item's line. Never put it \
 at the end of the reply, where it would seem to cover every item.
 - Protein, carbs and fat are single numbers for the typical portion. Copy them from the tool \

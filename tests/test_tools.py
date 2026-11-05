@@ -730,3 +730,81 @@ def test_water_adds_grams_but_no_calories_and_no_usda_call(offline, monkeypatch)
     assert watered["calories"] == plain["calories"]
     assert (watered["protein_g"], watered["carbs_g"], watered["fat_g"]) == (plain["protein_g"], plain["carbs_g"], plain["fat_g"])
     assert looked_up == ["egg", "egg"]  # water was never looked up
+
+
+# --- Oil level: the words people use, and what they change ---
+
+
+def test_oily_tteokbokki_is_higher_than_regular_and_light(offline):
+    plate = portion("tteokbokki", 1, "plate")
+    grams = {"grams_low": plate["grams_low"], "grams_high": plate["grams_high"]}
+    light, normal, heavy = (dish("tteokbokki", oil_level=level, **grams) for level in ("light", "normal", "heavy"))
+
+    for result in (light, normal, heavy):
+        assert result["dish_name"] == "tteokbokki"
+        assert result["confidence"] == "template"
+        assert (result["grams_low"], result["grams_high"]) == (plate["grams_low"], plate["grams_high"])
+    assert light["calories"]["typical"] < normal["calories"]["typical"] < heavy["calories"]["typical"]
+    assert light["fat_g"] < heavy["fat_g"]
+    assert (light["protein_g"], light["carbs_g"]) == (heavy["protein_g"], heavy["carbs_g"])  # only the oil changed
+    assert "Cooking oil: 6-8 g per reference plate (oil_level: heavy)." in heavy["assumptions"]
+
+
+def test_light_oil_mapo_tofu_is_lower_than_heavy(offline):
+    light = dish("mapo tofu", grams_low=200, grams_high=400, oil_level="light")
+    heavy = dish("mapo tofu", grams_low=200, grams_high=400, oil_level="heavy")
+
+    assert light["calories"]["typical"] < heavy["calories"]["typical"]
+    assert light["calories"]["high"] < heavy["calories"]["high"]
+    assert light["fat_g"] < heavy["fat_g"]
+    assert (light["protein_g"], light["carbs_g"]) == (heavy["protein_g"], heavy["carbs_g"])
+
+
+@pytest.mark.parametrize(
+    ("name", "dish_name", "level"),
+    [
+        ("oily tteokbokki", "tteokbokki", "heavy"),
+        ("Oily  Tteokbokki", "tteokbokki", "heavy"),
+        ("very greasy mapo tofu", "mapo tofu", "heavy"),
+        ("tteokbokki with little oil", "tteokbokki", "light"),
+        ("少油的麻婆豆腐", "mapo tofu", "light"),
+        ("很油的麻婆豆腐", "mapo tofu", "heavy"),
+        ("regular tteokbokki", "tteokbokki", "normal"),
+    ],
+)
+def test_oil_words_in_the_dish_name_become_oil_level(offline, name, dish_name, level):
+    from_words = dish(name, grams_low=200, grams_high=400)
+    passed_in = dish(dish_name, grams_low=200, grams_high=400, oil_level=level)
+
+    assert from_words["dish_name"] == dish_name  # the canonical name, not a new dish
+    assert from_words["confidence"] == "template"
+    assert from_words["calories"] == passed_in["calories"]
+    assert from_words["fat_g"] == passed_in["fat_g"]
+    assert any(f"as oil_level {level}." in a for a in from_words["assumptions"])
+
+
+def test_oil_level_passed_in_wins_over_words_in_the_name(offline):
+    result = dish("oily tteokbokki", grams_low=200, grams_high=400, oil_level="light")
+
+    assert result["calories"] == dish("tteokbokki", grams_low=200, grams_high=400, oil_level="light")["calories"]
+    assert "Kept oil_level light as passed in; 'oily' was left out of the dish name." in result["assumptions"]
+
+
+def test_oil_words_leave_other_names_and_ingredient_lists_alone(offline):
+    # Not a known dish once the words are gone: the name is kept, and there is no recipe.
+    assert dish("oily fish", grams_low=100, grams_high=150)["error"] == "No built-in recipe for 'oily fish'."
+    assert tools.split_oil_words("chili oil wontons") is None  # 'oil' alone is part of a dish name
+    # An ingredients list already holds the oil the model chose, so the name does not narrow it again.
+    fried_egg = [{"name": "egg", "grams_low": 44, "grams_high": 60},
+                 {"name": "cooking oil", "grams_low": 5, "grams_high": 10}]
+    assert dish("oily fried egg", ingredients=fried_egg)["calories"] == dish("fried egg", ingredients=fried_egg)["calories"]
+
+
+@pytest.mark.parametrize("name", ["oily tteokbokki", "tteokbokki with little oil", "少油的麻婆豆腐", "very greasy mapo tofu"])
+def test_oil_words_do_not_change_the_portion(name):
+    plain = "mapo tofu" if "mapo" in name or "麻婆" in name else "tteokbokki"
+    with_words, without = portion(name, 1, "plate"), portion(plain, 1, "plate")
+
+    assert (with_words["grams_low"], with_words["grams_typical"], with_words["grams_high"]) == (
+        without["grams_low"], without["grams_typical"], without["grams_high"])
+    assert "No portion rule" not in with_words["assumption"]

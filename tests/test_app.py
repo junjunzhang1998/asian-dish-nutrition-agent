@@ -4,6 +4,7 @@ import json
 from types import SimpleNamespace
 
 import app
+import tools
 
 
 class FakeReply:
@@ -98,3 +99,42 @@ def test_run_agent_gives_up_after_three_empty_replies(monkeypatch):
     assert response == app.EMPTY_REPLY_MESSAGE
     assert len(sent) == 3
     assert app.EMPTY_REPLY_NUDGE not in messages
+
+
+def test_oily_follow_up_reruns_the_same_dish_and_portion_with_heavy_oil(monkeypatch):
+    """Harness only: the model is scripted to pass oil_level 'heavy'. This checks that the call reaches
+    the tool through /chat, keeps the session, and changes the numbers; not what Gemini would choose."""
+    monkeypatch.delenv("USDA_API_KEY", raising=False)  # offline: the local snapshot
+    plate = {"dish_name": "tteokbokki", "grams_low": 200, "grams_high": 400}
+    sent = fake_model(monkeypatch, [
+        FakeReply(tool_calls=[tool_call("1", "estimate_portion_size", {"food_name": "tteokbokki", "quantity": 1, "unit": "plate"})]),
+        FakeReply(tool_calls=[tool_call("2", "estimate_dish_nutrition", plate)]),
+        FakeReply(content="Estimated: ..."),
+        FakeReply(tool_calls=[tool_call("3", "estimate_dish_nutrition", {**plate, "oil_level": "heavy"})]),
+        FakeReply(content="Estimated: ..."),
+    ])
+
+    first = app.chat(app.ChatRequest(message="a plate of tteokbokki"))
+    second = app.chat(app.ChatRequest(message="Actually, it was pretty oily", session_id=first.session_id))
+
+    assert second.session_id == first.session_id
+    [call] = second.tool_calls
+    assert call["args"] == {**plate, "oil_level": "heavy"}
+    before, after = json.loads(first.tool_calls[1]["result"]), json.loads(call["result"])
+    assert after["dish_name"] == before["dish_name"] == "tteokbokki"
+    assert (after["grams_low"], after["grams_high"]) == (before["grams_low"], before["grams_high"])
+    assert after["calories"]["typical"] > before["calories"]["typical"]
+    # The follow-up was sent with the first turn's tool results still in the session.
+    assert sent[3][-1] == {"role": "user", "content": "Actually, it was pretty oily"}
+    assert any(m["role"] == "tool" and m["tool_call_id"] == "2" for m in sent[3])
+
+
+def test_prompt_and_tool_schema_map_oil_words_to_oil_level():
+    schema = next(t for t in tools.TOOLS if t["function"]["name"] == "estimate_dish_nutrition")
+    oil_description = schema["function"]["parameters"]["properties"]["oil_level"]["description"]
+
+    for text in (app.SYSTEM_PROMPT, oil_description):
+        assert "'oily tteokbokki' is dish_name 'tteokbokki' with oil_level 'heavy'" in text
+        assert "in the first message" in text
+        for words in ("少油", "很油", "regular"):
+            assert words in text

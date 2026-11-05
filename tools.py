@@ -220,6 +220,9 @@ def estimate_portion_size(food_name: str, quantity: float, unit: str, size: str 
         )
 
     food = " ".join(food_name.lower().split())
+    split = split_oil_words(food)  # '少油的麻婆豆腐' -> '麻婆豆腐': oil words do not change the portion
+    if split:
+        food = split[0]
     category = find_portion_category(food)
     known_food = category is not None
     if not known_food:
@@ -285,6 +288,38 @@ for dish, entry in DISHES.items():
     DISH_ALIASES[dish] = dish
     for alias in entry["aliases"]:
         DISH_ALIASES[alias.lower()] = dish
+
+# Words about oil that can end up inside a dish name ('oily tteokbokki') -> the oil_level they mean.
+OIL_WORDS = {
+    "very oily": "heavy", "extra oily": "heavy", "really oily": "heavy", "pretty oily": "heavy",
+    "oily": "heavy", "very greasy": "heavy", "greasy": "heavy", "with lots of oil": "heavy",
+    "lots of oil": "heavy", "很油": "heavy", "油腻": "heavy", "多油": "heavy",
+    "not oily": "light", "not greasy": "light", "less oily": "light", "light on oil": "light",
+    "with little oil": "light", "with less oil": "light", "little oil": "light", "less oil": "light",
+    "low-oil": "light", "low oil": "light", "少油": "light", "不油": "light", "油少": "light",
+    "regular": "normal", "normal": "normal", "正常": "normal",
+}
+
+
+def split_oil_words(dish: str) -> tuple[str, str, str] | None:
+    """'oily tteokbokki' -> ('tteokbokki', 'heavy', 'oily'), or None.
+
+    Only when what is left is a built-in dish or a pinned food, so a real dish name that holds
+    one of these words keeps it.
+    """
+    for words in sorted(OIL_WORDS, key=len, reverse=True):
+        if words.isascii():
+            rest = re.sub(rf"(?<![\w-]){re.escape(words)}(?![\w-])", " ", dish, count=1)
+        else:
+            rest = dish.replace(words, " ", 1)  # Chinese has no spaces between words
+        if rest == dish:
+            continue
+        rest = " ".join(rest.split()).strip(" ,()（）").removeprefix("的").removesuffix("的").strip()
+        rest = re.sub(r"^with\s+|\s+with$", "", rest)
+        if rest in DISH_ALIASES or normalize_food_name(rest) in FOODS:
+            return rest, OIL_WORDS[words], words
+    return None
+
 
 # Above this share of an ingredient list's typical weight, flour and starch with no water item
 # almost always mean dry flour was listed at the weight of the cooked food.
@@ -513,6 +548,19 @@ def estimate_dish_nutrition(
 
     dish = " ".join(dish_name.lower().split())
 
+    # Oil words left in the name ('oily tteokbokki') mean oil_level, not another dish. Only for a
+    # recipe or a single food: an `ingredients` list already carries the oil the model chose.
+    # An oil_level passed in wins over the words.
+    oil_note = None
+    split = None if ingredients or dish in DISH_ALIASES else split_oil_words(dish)
+    if split:
+        dish, level_from_words, words = split
+        if oil_level == "unknown":
+            oil_level = level_from_words
+            oil_note = f"Read '{words}' in the dish name as oil_level {level_from_words}."
+        else:
+            oil_note = f"Kept oil_level {oil_level} as passed in; '{words}' was left out of the dish name."
+
     # 1. The model (or the user) gave the ingredients: calculate from those.
     if ingredients:
         items, error = parse_ingredients(ingredients)
@@ -593,7 +641,7 @@ def estimate_dish_nutrition(
         "fat_g": round(totals["fat_g"]),
         "biggest_uncertainty": biggest_uncertainty,
         "confidence": confidence,
-        "assumptions": assumptions + match_notes,
+        "assumptions": assumptions + ([oil_note] if oil_note else []) + match_notes,
         "sources": sources,
     }
 
@@ -780,7 +828,11 @@ TOOLS = [
                         "enum": OIL_LEVELS,
                         "description": (
                             "How oily the dish was: 'light', 'normal', 'heavy', or 'unknown' (default). "
-                            "Set it only when the user says how oily it was, e.g. 'pretty oily' -> 'heavy'. "
+                            "Set it whenever the user describes the oil, in the first message or a follow-up: "
+                            "'oily', 'greasy', '很油', '油腻' -> 'heavy'; 'little oil', 'not oily', '少油' -> "
+                            "'light'; 'regular' or 'normal' for the dish itself -> 'normal'. Keep the oil "
+                            "words out of dish_name: 'oily tteokbokki' is dish_name 'tteokbokki' with "
+                            "oil_level 'heavy'. Leave it out when the user says nothing about oil. "
                             "The tool narrows the oil itself: for a dish with an `ingredients` list, resend "
                             "the earlier list exactly, every number unchanged, and add oil_level. Changing "
                             "the oil grams as well counts the oil twice."
