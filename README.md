@@ -1,6 +1,6 @@
 # East Asian Food Nutrition Agent
 
-**Live:** [Cloud Run URL](https://asian-dish-nutrition-agent-git-410194130748.northamerica-northeast1.run.app/) (sign in with a Columbia account)
+**Live:** [Cloud Run URL](https://asian-food-nutrition-agent-65139804112.us-east1.run.app)
 
 I recently started tracking my diet and noticed that calorie-tracking apps on the market often struggle with Asian food. The three main problems I found were:
 - **Limited data:** it is easy to find information for common American dishes, but not for specific Asian dishes.
