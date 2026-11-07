@@ -6,6 +6,7 @@ import litellm
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from tools import TOOL_MAP, TOOLS, clean_tool_name, run_tool
@@ -243,7 +244,13 @@ class ChatResponse(BaseModel):
     tool_calls: list[dict]
 
 
-@app.get("/")
+# Public assets such as the link-preview image (og:image) for LinkedIn and other sites.
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+
+
+# HEAD as well as GET: link-preview crawlers (LinkedIn among them) may send HEAD first,
+# and a 405 there can make them give up on the preview.
+@app.api_route("/", methods=["GET", "HEAD"])
 def index():
     return FileResponse(Path(__file__).parent / "index.html")
 
